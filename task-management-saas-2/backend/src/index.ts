@@ -12,8 +12,31 @@ import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
+// Process event handlers for debugging
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION at:', promise, 'reason:', reason);
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received - shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received - shutting down gracefully');
+  process.exit(0);
+});
+
 const app = express();
 const PORT = parseInt(process.env.PORT || '4000', 10);
+
+console.log('=== App initializing ===');
+console.log('CORS_ORIGIN:', process.env.CORS_ORIGIN);
 
 // Security middleware
 app.use(helmet());
@@ -35,8 +58,9 @@ app.use(cookieParser());
 
 // Health check
 app.get('/health', (_req, res) => {
-  res.json({ 
-    status: 'ok', 
+  console.log('Health check received');
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
   });
