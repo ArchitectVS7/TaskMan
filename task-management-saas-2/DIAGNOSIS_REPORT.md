@@ -118,7 +118,12 @@ The `-p` flag explicitly sets the port, and most versions of serve understand th
 
 ### Attempt 5/5: Reserved for final fix if needed
 
-## Current Situation (17:52 UTC)
-- **Blocking Issue:** Railway deployment stuck in QUEUED status
+## Current Situation (17:55 UTC)
+- **Blocking Issue:** Railway deployment stuck in QUEUED status for 10+ minutes
+- **Deployment ID:** 6704cd96-ce82-4a3b-b6ad-4df99c5dbddc (queued since 17:49:25)
 - **Fix Ready:** Express server solution should resolve 502 error once deployed
-- **Manual Action Needed:** May need Railway console intervention to unstick deployment queue
+- **CLI Attempts Failed:**
+  - `railway down --yes` → Removed old deployment but stuck one remains QUEUED
+  - `railway redeploy --yes` → Rejected ("cannot be redeployed" - platform sees QUEUED as active)
+- **Manual Action Needed:** Railway dashboard intervention to cancel stuck deployment, or wait for Railway queue to clear
+- **Alternative:** If queue never clears, may need to create new service or contact Railway support
