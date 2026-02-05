@@ -490,6 +490,8 @@ The estimated 36-60 hours of work would produce a superior system with:
 
 Since this is a **monorepo** with two separate projects, you cannot use one-click deploy. Instead, you'll create **two Railway projects** (one for each app), each with **three services** (PostgreSQL, backend, frontend).
 
+> **Prerequisites:** Ensure `package-lock.json` files exist in all backend/frontend directories. The Dockerfiles use `npm ci` which requires lock files. If missing, run `npm install --package-lock-only` in each directory.
+
 ---
 
 #### For task-management-saas-1 (TaskApp)
@@ -529,11 +531,13 @@ PORT                → 4000
 1. Click **"+ New"** → **"GitHub Repo"**
 2. Select the same `lab-projects` repository
 3. Set **Root Directory** to: `task-management-saas-1/frontend`
-4. In Settings → Build, add **Build Arguments**:
+4. In the **Variables** tab, add:
    ```
-   VITE_API_URL=https://<backend-service-domain>.railway.app
+   VITE_API_URL = https://<backend-service-domain>.railway.app
    ```
-   (Get the backend domain from backend service → Settings → Domains)
+   (Get the backend domain from backend service → Settings → Networking → Domains)
+
+   > Railway passes service variables to Docker builds automatically via the Dockerfile's `ARG` directive.
 
 **Step 6: Generate Public Domains**
 
@@ -583,7 +587,7 @@ COOKIE_DOMAIN       → .railway.app
 | Add backend (set root dir) | ☐ | ☐ |
 | Configure backend env vars | ☐ | ☐ |
 | Add frontend (set root dir) | ☐ | ☐ |
-| Set VITE_API_URL build arg | ☐ | ☐ |
+| Set VITE_API_URL variable | ☐ | ☐ |
 | Generate domains | ☐ | ☐ |
 | Update CORS_ORIGIN | ☐ | ☐ |
 | Test health endpoint | ☐ | ☐ |
