@@ -9,14 +9,15 @@ import {
   User,
   Plus,
   Search,
-  X
+  X,
+  type LucideIcon
 } from 'lucide-react';
 import type { Task } from '../types';
 
 interface Command {
   id: string;
   label: string;
-  icon: React.ComponentType<{ size?: number }>;
+  icon: LucideIcon;
   action: () => void;
   group: 'navigation' | 'tasks' | 'projects';
 }
