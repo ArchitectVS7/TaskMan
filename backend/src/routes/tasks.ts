@@ -12,8 +12,8 @@ router.use(authenticate);
 const createTaskSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be 200 characters or less'),
   description: z.string().max(2000, 'Description must be 2000 characters or less').optional(),
-  projectId: z.string().uuid('Invalid project ID'),
-  assigneeId: z.string().uuid('Invalid assignee ID').optional().nullable(),
+  projectId: z.string().uuid('Invalid project ID format'),
+  assigneeId: z.string().uuid('Invalid assignee ID format').optional().nullable(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE']).optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   dueDate: z.string().datetime().optional().nullable(),
@@ -28,10 +28,26 @@ const bulkStatusSchema = z.object({
 
 // --- Helpers ---
 
+const userSelect = {
+  id: true,
+  name: true,
+  avatarUrl: true,
+} as const;
+
 const taskInclude = {
-  project: { select: { id: true, name: true, color: true } },
-  assignee: { select: { id: true, name: true, avatarUrl: true } },
-  creator: { select: { id: true, name: true } },
+  project: {
+    select: {
+      id: true,
+      name: true,
+      color: true,
+    },
+  },
+  assignee: {
+    select: userSelect,
+  },
+  creator: {
+    select: userSelect,
+  },
 } as const;
 
 async function getProjectMembership(userId: string, projectId: string) {
@@ -46,11 +62,15 @@ function canModifyTask(
   userId: string
 ): boolean {
   if (!membership) return false;
+  // OWNER and ADMIN can modify any task in the project
   if (['OWNER', 'ADMIN'].includes(membership.role)) return true;
+  // MEMBER can only modify tasks they created
   if (membership.role === 'MEMBER' && task.creatorId === userId) return true;
+  // VIEWER cannot modify tasks
   return false;
 }
 
+// --- UUID validation helper ---
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function validateUUID(id: string, label: string): void {
@@ -61,25 +81,45 @@ function validateUUID(id: string, label: string): void {
 
 // --- Routes ---
 
-// PATCH /api/tasks/bulk-status - Must be registered BEFORE /:id routes
+// IMPORTANT: PATCH /bulk-status must be registered BEFORE GET /:id
+// Otherwise Express will try to match 'bulk-status' as an :id parameter
+
+// PATCH /api/tasks/bulk-status - Bulk status update
 router.patch('/bulk-status', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const data = bulkStatusSchema.parse(req.body);
 
+    // Get all tasks and verify permissions for each
     const tasks = await prisma.task.findMany({
-      where: { id: { in: data.taskIds } },
+      where: {
+        id: { in: data.taskIds },
+      },
+      include: {
+        project: {
+          include: {
+            members: true,
+          },
+        },
+      },
     });
 
+    // Filter tasks user can modify
+    const updatableTaskIds: string[] = [];
     for (const task of tasks) {
       const membership = await getProjectMembership(req.userId!, task.projectId);
-      if (!canModifyTask(membership, task, req.userId!)) {
-        throw new AppError('Unauthorized to modify one or more tasks', 403);
+      if (canModifyTask(membership, task, req.userId!)) {
+        updatableTaskIds.push(task.id);
       }
     }
 
+    // Update all authorized tasks
     const result = await prisma.task.updateMany({
-      where: { id: { in: data.taskIds } },
-      data: { status: data.status },
+      where: {
+        id: { in: updatableTaskIds },
+      },
+      data: {
+        status: data.status,
+      },
     });
 
     res.json({ updated: result.count });
@@ -88,39 +128,46 @@ router.patch('/bulk-status', async (req: AuthRequest, res: Response, next: NextF
   }
 });
 
-// GET /api/tasks - List tasks with filters
+// GET /api/tasks - List tasks
 router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     // Get all projects where user is a member
-    const userProjects = await prisma.projectMember.findMany({
-      where: { userId: req.userId },
-      select: { projectId: true },
+    const userProjects = await prisma.project.findMany({
+      where: {
+        OR: [
+          { ownerId: req.userId },
+          { members: { some: { userId: req.userId } } },
+        ],
+      },
+      select: { id: true },
     });
-    const projectIds = userProjects.map((pm) => pm.projectId);
 
-    // Build query filters
-    const where: Record<string, unknown> = {
+    const projectIds = userProjects.map(p => p.id);
+
+    // Build filters
+    const where: any = {
       projectId: { in: projectIds },
     };
 
     if (req.query.projectId) {
-      const pid = req.query.projectId as string;
-      if (projectIds.includes(pid)) {
-        where.projectId = pid;
-      } else {
-        // User doesn't have access to this project
-        return res.json([]);
-      }
+      where.projectId = req.query.projectId as string;
     }
-    if (req.query.status) where.status = req.query.status;
-    if (req.query.priority) where.priority = req.query.priority;
-    if (req.query.assigneeId) where.assigneeId = req.query.assigneeId;
-    if (req.query.creatorId) where.creatorId = req.query.creatorId;
+    if (req.query.status) {
+      where.status = req.query.status as string;
+    }
+    if (req.query.priority) {
+      where.priority = req.query.priority as string;
+    }
+    if (req.query.assigneeId) {
+      where.assigneeId = req.query.assigneeId as string;
+    }
+    if (req.query.creatorId) {
+      where.creatorId = req.query.creatorId as string;
+    }
 
+    // Build orderBy with validation to prevent injection
     const sortBy = (req.query.sortBy as string) || 'createdAt';
     const order = (req.query.order as 'asc' | 'desc') || 'desc';
-
-    // Validate sortBy to prevent injection
     const allowedSortFields = ['createdAt', 'updatedAt', 'title', 'status', 'priority', 'dueDate'];
     const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
 
@@ -136,7 +183,7 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   }
 });
 
-// GET /api/tasks/:id - Get single task
+// GET /api/tasks/:id - Get task detail
 router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     validateUUID(req.params.id, 'task ID');
@@ -150,7 +197,7 @@ router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       throw new AppError('Task not found', 404);
     }
 
-    // Verify user has access to this task's project
+    // Verify user is member of task's project
     const membership = await getProjectMembership(req.userId!, task.projectId);
     if (!membership) {
       throw new AppError('Task not found', 404);
@@ -167,20 +214,30 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
   try {
     const data = createTaskSchema.parse(req.body);
 
-    // Check project membership (must be OWNER, ADMIN, or MEMBER -- not VIEWER)
-    const membership = await getProjectMembership(req.userId!, data.projectId);
-    if (!membership) {
+    // First check if project exists
+    const project = await prisma.project.findUnique({
+      where: { id: data.projectId },
+    });
+    if (!project) {
       throw new AppError('Project not found', 404);
     }
-    if (membership.role === 'VIEWER') {
-      throw new AppError('Viewers cannot create tasks', 403);
+
+    // Verify user is member of the project
+    const membership = await getProjectMembership(req.userId!, data.projectId);
+    if (!membership) {
+      throw new AppError('You are not a member of this project', 403);
     }
 
-    // If assigneeId provided, verify assignee is a project member
+    // VIEWER cannot create tasks
+    if (membership.role === 'VIEWER') {
+      throw new AppError('VIEWER role cannot create tasks', 403);
+    }
+
+    // If assigneeId provided, verify they are a project member
     if (data.assigneeId) {
       const assigneeMembership = await getProjectMembership(data.assigneeId, data.projectId);
       if (!assigneeMembership) {
-        throw new AppError('Assignee is not a member of this project', 400);
+        throw new AppError('Assignee must be a member of the project', 400);
       }
     }
 
@@ -189,7 +246,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
         title: data.title,
         description: data.description,
         projectId: data.projectId,
-        assigneeId: data.assigneeId || null,
+        assigneeId: data.assigneeId,
         status: data.status || 'TODO',
         priority: data.priority || 'MEDIUM',
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
@@ -210,38 +267,42 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     validateUUID(req.params.id, 'task ID');
     const data = updateTaskSchema.parse(req.body);
 
-    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+    const task = await prisma.task.findUnique({
+      where: { id: req.params.id },
+    });
+
     if (!task) {
       throw new AppError('Task not found', 404);
     }
 
+    // Verify user can modify this task
     const membership = await getProjectMembership(req.userId!, task.projectId);
     if (!canModifyTask(membership, task, req.userId!)) {
-      throw new AppError('Unauthorized to modify this task', 403);
+      throw new AppError('You cannot modify this task', 403);
     }
 
-    // If assigneeId is being changed, verify new assignee is a project member
+    // If changing assignee, verify new assignee is a project member
     if (data.assigneeId !== undefined && data.assigneeId !== null) {
       const assigneeMembership = await getProjectMembership(data.assigneeId, task.projectId);
       if (!assigneeMembership) {
-        throw new AppError('Assignee is not a member of this project', 400);
+        throw new AppError('Assignee must be a member of the project', 400);
       }
     }
 
-    const updated = await prisma.task.update({
+    const updatedTask = await prisma.task.update({
       where: { id: req.params.id },
       data: {
         ...(data.title !== undefined && { title: data.title }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.status !== undefined && { status: data.status }),
         ...(data.priority !== undefined && { priority: data.priority }),
-        ...(data.assigneeId !== undefined && { assigneeId: data.assigneeId || null }),
+        ...(data.assigneeId !== undefined && { assigneeId: data.assigneeId }),
         ...(data.dueDate !== undefined && { dueDate: data.dueDate ? new Date(data.dueDate) : null }),
       },
       include: taskInclude,
     });
 
-    res.json(updated);
+    res.json(updatedTask);
   } catch (error) {
     next(error);
   }
@@ -252,17 +313,24 @@ router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction
   try {
     validateUUID(req.params.id, 'task ID');
 
-    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+    const task = await prisma.task.findUnique({
+      where: { id: req.params.id },
+    });
+
     if (!task) {
       throw new AppError('Task not found', 404);
     }
 
+    // Verify user can modify this task
     const membership = await getProjectMembership(req.userId!, task.projectId);
     if (!canModifyTask(membership, task, req.userId!)) {
-      throw new AppError('Unauthorized to delete this task', 403);
+      throw new AppError('You cannot delete this task', 403);
     }
 
-    await prisma.task.delete({ where: { id: req.params.id } });
+    await prisma.task.delete({
+      where: { id: req.params.id },
+    });
+
     res.status(204).send();
   } catch (error) {
     next(error);
