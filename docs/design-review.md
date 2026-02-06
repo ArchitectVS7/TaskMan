@@ -1,513 +1,427 @@
-# TaskMan Competitive Analysis & UI/UX Enhancement Strategy
+# TaskMan Development Roadmap
 
-## Executive Summary
+## Sprint-Based Feature Checklist
 
-TaskMan is a well-architected React/TypeScript task manager with solid fundamentals: dual views (table + kanban), role-based permissions, and modern tech stack. However, it's currently "vanilla" compared to 2025-2026 market leaders. This report identifies feature gaps, differentiation opportunities, and provides actionable UI/UX enhancement recommendations.
-
----
-
-## 1. FEATURE GAP ANALYSIS: What We're Missing
-
-Based on research of Todoist, TickTick, Things 3, Notion, Asana, and Monday.com, here are the critical features TaskMan lacks:
-
-### Must-Have Features (Table Stakes in 2025)
-
-**Dark Mode** ⭐ CRITICAL
-- Every major task manager now offers dark mode as standard
-- Users expect automatic switching based on system settings
-- Reduces eye strain, improves battery life, signals modern design
-
-**Search & Filtering**
-- Todoist has natural language search ("overdue tasks assigned to me")
-- TickTick offers full-text search across tasks and notes
-- We have ZERO search capability
-
-**Notifications System**
-- Task reminders (due date approaching, overdue)
-- @mentions and assignment notifications
-- Activity updates on watched projects
-
-**Time Tracking & Estimation**
-- TickTick has built-in Pomodoro timer
-- Monday.com offers time tracking on tasks
-- We lack any time-related features beyond due dates
-
-**Natural Language Input**
-- Todoist parses "Buy milk every other Tuesday at 3pm starting next week"
-- We require manual field-by-field entry
-
-**Recurring Tasks**
-- Standard feature across all competitors
-- Daily, weekly, monthly patterns with complex rules
-- We have no repeat functionality
-
-### High-Value Features
-
-**AI Capabilities** (2025 trend)
-- Motion: AI-powered auto-scheduling
-- Todoist: Task Assist (breaks down complex tasks)
-- Asana: Smart goals and risk detection
-- We have zero AI integration
-
-**Voice Input**
-- Todoist Ramble: voice-to-task creation
-- Growing trend for mobile users
-- We lack voice capabilities
-
-**Habit Tracking**
-- TickTick's killer feature: habits alongside tasks
-- Differentiates from pure task managers
-- We don't track habits
-
-**Custom Fields & Tags**
-- Notion: unlimited custom properties
-- Monday.com: flexible metadata
-- We only have fixed fields
-
-**File Attachments**
-- Standard feature across all platforms
-- We can't attach files to tasks
-
-**Comments & Activity Logs**
-- Discussion threads on tasks
-- Audit trail of changes
-- We track creator but not activity history
-
-**Calendar View**
-- Visual timeline for due dates
-- Drag-to-reschedule
-- We only have table and kanban
-
-**Integrations**
-- Todoist: 80+ integrations
-- TickTick: 30+ integrations
-- We have zero external integrations
+This roadmap organizes TaskMan's evolution into balanced sprints, each containing one substantial feature and complementary quick wins. Based on competitive analysis of Todoist, TickTick, Things 3, Notion, Asana, and Monday.com.
 
 ---
 
-## 2. DIFFERENTIATION OPPORTUNITIES: What We Can Build That Others Miss
+## Sprint 1: Foundation ✅ COMPLETED
 
-### Unique Strengths to Amplify
+**Status:** Shipped to `claude/research-competitor-features-VXbt7`
 
-**1. Creator Accountability System** ⭐ BUILD ON THIS
-- We already track task creators (most apps don't)
-- DIFFERENTIATION: Build a "who's creating busywork?" analytics dashboard
-- Show ratio of self-assigned vs. delegated tasks per user
-- Identify bottlenecks and over-assigners
-- Surface metrics: task creation velocity, completion rate by creator
+### Core Features
+- ✅ **Dark Mode** (3 days) - Light/Dark/System themes with persistence
+- ✅ **Search & Filtering** (5 days) - Full-text search, advanced filters, date ranges
+- ✅ **Notifications System** (5 days) - Real-time notifications with auto-refresh
 
-**2. Permission Granularity**
-- We have 4-tier permissions (OWNER/ADMIN/MEMBER/VIEWER)
-- Most apps have simpler models
-- DIFFERENTIATION: Add field-level permissions
-  - "Can edit assignee but not due date"
-  - "Can comment but not change status"
-  - Position as enterprise-grade security
-
-**3. Developer-First Experience**
-- We're TypeScript end-to-end with modern stack
-- DIFFERENTIATION: Build a public API + webhooks
-- Offer CLI tool for power users
-- Position as "task manager for developers by developers"
-
-**4. Anti-Feature: Simplicity**
-- Notion and Monday.com are overwhelming
-- DIFFERENTIATION: "The task manager that stays out of your way"
-- Focus on speed: keyboard shortcuts, minimal clicks
-- Quick capture mode (global shortcut to add task)
-
-### Gaps in the Market
-
-**Focus Mode Features**
-- Most apps track tasks but don't help you FOCUS
-- BUILD: "Deep Work" mode
-  - Blocks distractions, hides non-critical tasks
-  - Shows only 1-3 most important tasks
-  - Pomodoro timer with task integration
-  - "Don't break the chain" visual streaks
-
-**Collaborative Estimation**
-- Asana has workload, but lacks Planning Poker
-- BUILD: Built-in estimation games
-  - T-shirt sizing, Fibonacci points
-  - Team consensus tools
-  - Velocity tracking over time
-
-**Smart Task Dependencies**
-- Monday.com has dependencies, but not auto-scheduling
-- BUILD: Critical path visualization
-  - Auto-adjust due dates when dependencies shift
-  - Highlight bottlenecks
-  - "What's blocking me today?" view
-
-**Burnout Prevention**
-- No competitor tracks team health
-- BUILD: Workload balancing dashboard
-  - Warn when team member is over-assigned
-  - Suggest task redistribution
-  - Track overtime trends
+**Impact:** Modern baseline established. App no longer "vanilla."
 
 ---
 
-## 3. UI/UX ENHANCEMENT STRATEGY
+## Sprint 2: Visual Customization & AI Foundation
 
-### A) Color Theme System ⭐ EASY WIN #1
+**Goal:** Give users control over appearance + lay groundwork for intelligent features
 
-**Implementation Approach:**
+### Quick Wins
+- [ ] **Color Theme System** (4-5 days)
+  - 5 preset themes (Indigo, Purple, Rose, Emerald, Amber)
+  - Theme switcher UI in settings
+  - Replace hardcoded colors with CSS variables
+  - Effort: Create `themes.ts`, update Tailwind config, add theme picker modal
 
-**Phase 1: Theme Infrastructure (2-3 days)**
-```typescript
-// frontend/src/lib/themes.ts
-export const colorThemes = {
-  indigo: { primary: '#6366f1', secondary: '#818cf8', ... },
-  purple: { primary: '#9333ea', secondary: '#a855f7', ... },
-  rose: { primary: '#e11d48', secondary: '#f43f5e', ... },
-  emerald: { primary: '#059669', secondary: '#10b981', ... },
-  amber: { primary: '#d97706', secondary: '#f59e0b', ... },
-}
+- [ ] **Layout Templates** (3-4 days)
+  - 5 layouts: Compact, Spacious, Minimal, Split, Dashboard-First
+  - Layout switcher in user settings
+  - Collapsible sidebar for Minimal mode
+  - **Result:** 5 colors × 5 layouts = 25 UI combinations
 
-// Use Zustand store for theme persistence
-export const useThemeStore = create(persist(...))
-```
+### Substantial Task
+- [ ] **AI-Powered Task Insights** (7 days)
+  - Track task completion patterns (day of week, time of day)
+  - Calculate velocity metrics (tasks/week, completion rate)
+  - Generate insights: "You complete tasks 30% faster on Tuesdays"
+  - Smart suggestions: "This task usually takes 2 hours based on history"
+  - Backend: Analytics table, aggregation queries
+  - Frontend: Insights dashboard widget
 
-**Phase 2: Tailwind CSS Variables (1 day)**
-- Update `tailwind.config.js` to use CSS custom properties
-- Replace hardcoded `indigo-*` with `primary-*` semantic colors
-- Example: `bg-indigo-600` → `bg-primary-600`
-
-**Phase 3: Theme Switcher UI (1 day)**
-- Add settings icon to sidebar
-- Modal with color theme cards
-- Live preview (change instantly)
-
-**EFFORT: 4-5 days**
-**IMPACT: HIGH - Users love customization, signals modern app**
-
-### A.1) Color Customization Per Theme ⭐ BONUS FEATURE
-
-**Implementation:**
-- Color picker component (use `react-colorful` - 3kb)
-- Allow overriding individual theme colors
-- Store custom colors in user preferences
-
-**EFFORT: +2 days**
-**RECOMMENDATION: Start with 5 preset themes, add customization in v2**
+**Sprint Result:** Users can customize appearance to their taste + see intelligent insights about their productivity patterns.
 
 ---
 
-### B) Layout Template System ⭐ EASY WIN #2
+## Sprint 3: Power User Features & Polish
 
-**5 Layout Variants to Implement:**
+**Goal:** Speed up workflows for keyboard users + add visual polish
 
-**1. Compact (current)**
-- Fixed sidebar (w-64)
-- Standard padding
-- Default view
+### Quick Wins
+- [ ] **Command Palette** (2 days)
+  - `Cmd+K` / `Ctrl+K` to open
+  - Search tasks, navigate pages, create tasks
+  - Use shadcn/ui Command component
+  - Keyboard-first workflow (Linear/Notion style)
 
-**2. Spacious**
-- Wider content area
-- Larger font sizes
-- More whitespace
-- For accessibility
+- [ ] **Glassmorphism + Micro-interactions** (3 days)
+  - Frosted glass effect on modals/cards
+  - Button hover scale animations
+  - Task completion celebrations (confetti)
+  - Loading state animations
+  - Use Framer Motion for animations
 
-**3. Minimal**
-- Collapsible sidebar (icons only)
-- Full-width content
-- Hidden unless hover
-- For focus mode
+### Substantial Task
+- [ ] **Recurring Tasks** (5 days)
+  - Daily, weekly, monthly patterns
+  - Custom recurrence rules (every 2nd Tuesday)
+  - "Complete and create next" button
+  - Backend: Recurrence model, generation logic
+  - Frontend: Recurrence picker UI
 
-**4. Split**
-- Sidebar + task list + detail panel (3 columns)
-- Master-detail pattern
-- No modals, everything inline
-
-**5. Dashboard-First**
-- Sidebar + dashboard widgets + quick add
-- Metrics always visible
-- For managers
-
-**Implementation Approach:**
-
-```typescript
-// frontend/src/store/layout.ts
-export const useLayoutStore = create(persist(
-  (set) => ({
-    layout: 'compact', // compact | spacious | minimal | split | dashboard
-    setLayout: (layout) => set({ layout }),
-  }),
-))
-
-// frontend/src/components/Layout.tsx
-const layoutClasses = {
-  compact: 'w-64',
-  spacious: 'w-72',
-  minimal: 'w-16 hover:w-64 transition-all',
-  ...
-}
-```
-
-**EFFORT: 3-4 days**
-**IMPACT: MEDIUM-HIGH - Visual variety without breaking UX**
-
-**5 colors × 5 layouts = 25 combinations!** ✅
+**Sprint Result:** App feels fast and polished. Power users can fly through tasks with keyboard shortcuts.
 
 ---
 
-### B.1) Alternative to Drag-n-Drop (If Too Complex)
+## Sprint 4: Time Management & Views
 
-**RECOMMENDATION: Drag-n-drop is ALREADY implemented** (you use `dnd-kit`)
+**Goal:** Help users visualize and manage time better
 
-But here are simpler customization options if you want a second axis:
+### Quick Wins
+- [ ] **Skeleton Loading States** (2 days)
+  - Replace spinners with content placeholders
+  - Dashboard, projects, tasks skeletons
+  - Perceived performance boost
 
-**Option 1: Density Settings** (EASIEST - 1 day)
-```typescript
-density: 'comfortable' | 'compact' | 'spacious'
-```
-- Adjusts padding, font sizes, card spacing
-- Gmail-style option
-- Lightweight implementation
+- [ ] **Empty State Illustrations** (1 day)
+  - Friendly illustrations for empty screens
+  - Use undraw.co or humaaans
+  - Onboarding guidance
 
-**Option 2: Icon Style** (EASY - 1 day)
-- Lucide (current) vs. Heroicons vs. Phosphor Icons
-- Swap icon library with theme
-- Different visual personality
+### Substantial Task
+- [ ] **Time Tracking + Calendar View** (7 days)
+  - **Time Tracking:**
+    - Start/stop timer on tasks
+    - Manual time entry
+    - Time estimates vs. actual
+    - Pomodoro mode (25min work / 5min break)
+  - **Calendar View:**
+    - Monthly calendar showing due dates
+    - Drag tasks to reschedule
+    - Week view option
+  - Backend: Time entries table
+  - Frontend: Calendar component (use `react-big-calendar` or build custom)
 
-**Option 3: Card vs. List View Toggle** (2 days)
-- Projects as cards (current) vs. table list
-- Tasks as cards vs. table rows
-- Per-view preference
-
-**RECOMMENDATION: Go with Density Settings - complements themes & layouts perfectly**
-
----
-
-### C) Frontend Trends & Differentiation Strategy
-
-#### What We MUST Do (Keep Up with Trends)
-
-**1. Dark Mode** ⭐ CRITICAL PRIORITY
-- Industry standard by 2025
-- Implementation: 2-3 days
-- Use Tailwind's `dark:` variant classes
-
-**2. Glassmorphism Effects**
-- Subtle background blur + transparency
-- Example: Task cards with `backdrop-blur-sm bg-white/80`
-- Separates elements without harsh borders
-- Implementation: 1 day (CSS only)
-
-**3. Micro-Interactions**
-- Button hover states with subtle scale
-- Loading skeletons (not just spinners)
-- Success animations (checkmarks, confetti)
-- Implementation: 2-3 days
-
-**4. Skeleton Loading States**
-- Replace loading spinners with content placeholders
-- Shows layout while data loads
-- Industry standard for perceived performance
-- Implementation: 2 days
-
-**5. Empty States with Illustrations**
-- Current empty states are basic
-- Add friendly illustrations (undraw.co, humaaans)
-- Onboarding guidance
-- Implementation: 1 day
-
-#### What Will Make Us PULL AHEAD
-
-**1. AI-Powered Task Insights** (Trendsetter)
-- "You complete tasks 30% faster on Tuesdays"
-- "Your urgent tasks take 2x longer than expected"
-- Smart suggestions: "Delegate this to Sarah - it matches her skills"
-
-**2. Ambient Animations** (Visual Wow)
-- Animated gradient backgrounds (subtle)
-- Particle effects on task completion
-- Smooth page transitions
-
-**3. Command Palette** (Power User Feature)
-- Press `Cmd+K` to search/create/navigate
-- Linear, Notion, Vercel all have this
-- Keyboard-first workflow
-
-**4. Collaborative Cursors** (Real-time Feel)
-- See teammate avatars when viewing same project
-- Like Figma/Notion multiplayer
-- Signals modern, real-time app
-
-**5. Contextual Onboarding**
-- First-time user? Show inline tips
-- Progressive disclosure of features
-- Reduce overwhelming complexity
+**Sprint Result:** Users can see tasks in time context + track how long things actually take.
 
 ---
 
-### D) UI Library Recommendations for Visual Polish
+## Sprint 5: Team Collaboration
 
-Based on 2025-2026 trends, here's the optimal stack upgrade:
+**Goal:** Enable better team communication and real-time updates
 
-#### Recommended Libraries
+### Quick Wins
+- [ ] **Activity Logs** (3 days)
+  - Track all task changes (status, assignee, description)
+  - Show "who did what when" on task detail
+  - Backend: Activity table, middleware to log changes
+  - Frontend: Activity timeline component
 
-**1. shadcn/ui** ⭐ HIGHEST RECOMMENDATION
-- **Why**: Copy-paste components, full ownership, built on Radix + Tailwind
-- **What it adds**: Dropdowns, Dialogs, Tooltips, Popovers, Command palette
-- **Effort**: 1-2 days to integrate
-- **Cost**: FREE, no dependencies
-- **Note**: Not a library, you copy code into your project
+- [ ] **@Mentions in Comments** (2 days)
+  - Parse @username in comments
+  - Send notification to mentioned user
+  - Frontend: Autocomplete dropdown
 
-**Components to adopt immediately:**
-- Command palette (Cmd+K search)
-- Toast notifications (upgrade current system)
-- Dialog modals (more polished)
-- Dropdown menus (better accessibility)
+### Substantial Task
+- [ ] **Comments System + WebSocket Real-time** (10 days)
+  - **Comments:**
+    - Discussion threads on tasks
+    - Rich text editor (use `slate` or `tiptap`)
+    - Edit/delete own comments
+  - **WebSocket:**
+    - Real-time task updates (when teammate changes task)
+    - Real-time notifications (replace 30s polling)
+    - Presence indicators (who's viewing this task)
+  - Backend: Comments table, WebSocket server setup
+  - Frontend: WebSocket client, comment UI
 
-**2. Framer Motion (now "Motion")** ⭐ ANIMATION POWERHOUSE
-- **Why**: Industry standard for React animations
-- **What it adds**: Page transitions, hover effects, layout animations, gradient effects
-- **Effort**: 2-3 days to add tasteful animations
-- **Cost**: FREE, 35kb gzipped
-- **Use cases**:
-  - Task completion celebrations
+**Sprint Result:** Team can discuss tasks inline + see live updates without refreshing.
+
+---
+
+## Sprint 6: Flexibility & Attachments
+
+**Goal:** Let users customize data model + attach files
+
+### Quick Wins
+- [ ] **Density Settings** (1 day)
+  - Comfortable / Compact / Spacious modes
+  - Adjusts padding, font sizes globally
+  - Gmail-style setting
+
+- [ ] **Framer Motion Integration** (2 days)
   - Page transitions
+  - Modal enter/exit animations
   - Drag indicators
-  - Loading states
+  - Task card hover effects
 
-**3. Headless UI** (Alternative to shadcn/ui)
-- **Why**: Official Tailwind components, unstyled
-- **What it adds**: Same as shadcn but maintained by Tailwind team
-- **Effort**: 2-3 days
-- **Cost**: FREE
-- **Note**: Choose either shadcn/ui OR Headless UI, not both
+### Substantial Task
+- [ ] **Custom Fields + Tags + File Attachments** (10 days)
+  - **Custom Fields:**
+    - Admins can add text/number/date/dropdown fields per project
+    - Flexible metadata beyond fixed schema
+  - **Tags:**
+    - Color-coded tags, multi-select
+    - Tag filtering
+  - **File Attachments:**
+    - Upload files to tasks (use S3 or local storage)
+    - Preview images, download files
+    - Size limits, type restrictions
+  - Backend: Custom fields schema, file storage
+  - Frontend: Dynamic form builder, file upload UI
 
-**4. react-colorful** (Color Picker)
-- **Why**: Tiny (3kb), accessible color picker
-- **What it adds**: Custom theme color selection
-- **Effort**: 1 hour
-- **Cost**: FREE
-
-**5. Aceternity UI / Magic UI** (Premium Components)
-- **Why**: Pre-built animated components for "wow" factor
-- **What it adds**: Hero sections, gradient cards, blob backgrounds
-- **Effort**: Copy-paste specific components
-- **Cost**: FREE (most components), some premium
-- **Use cases**:
-  - Marketing landing page
-  - Dashboard header with animated gradients
-  - Login page with visual flair
-
-#### CSS Effects to Add (No Libraries Needed)
-
-**1. Gradient Meshes**
-```css
-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-background-size: 200% 200%;
-animation: gradient 15s ease infinite;
-```
-
-**2. Glassmorphism Cards**
-```css
-backdrop-filter: blur(12px);
-background: rgba(255, 255, 255, 0.8);
-border: 1px solid rgba(255, 255, 255, 0.2);
-```
-
-**3. Soft Shadows (Neumorphism-lite)**
-```css
-box-shadow:
-  0 2px 4px rgba(0,0,0,0.04),
-  0 8px 16px rgba(0,0,0,0.08);
-```
-
-**4. Animated Blobs**
-- Use CSS `border-radius` animation
-- No library needed, pure CSS
-- Background decorations
+**Sprint Result:** Users can structure data their way + attach supporting files.
 
 ---
 
-## IMPLEMENTATION ROADMAP
+## Sprint 7: Differentiation - Analytics & Focus
 
-### Phase 1: Quick Wins (1-2 weeks)
+**Goal:** Build features competitors don't have
 
-**Week 1:**
-1. Dark mode implementation (3 days)
-2. Color theme system (4 days)
+### Quick Win
+- [ ] **Focus Mode** (3 days)
+  - Hide sidebar, show only 1-3 top-priority tasks
+  - Distraction-free view
+  - "Don't break the chain" streak tracker
+  - Minimal UI with large task cards
 
-**Week 2:**
-3. Layout templates (4 days)
-4. Integrate shadcn/ui Command palette (2 days)
+### Substantial Tasks
+- [ ] **Creator Accountability Dashboard** (5 days)
+  - Who creates the most tasks?
+  - Self-assigned vs. delegated ratio
+  - Task velocity by creator
+  - Bottleneck identification
+  - Position as "anti-busywork" feature
 
-**Result:** 25+ UI customization combinations, dark mode, keyboard shortcuts
+- [ ] **Smart Task Dependencies** (7 days)
+  - Link tasks as blockers/dependencies
+  - Critical path visualization (Gantt-style)
+  - Auto-adjust due dates when dependency shifts
+  - "What's blocking me today?" view
+  - Backend: Dependencies table, graph algorithms
+  - Frontend: Dependency picker, timeline chart
 
-### Phase 2: Visual Polish (1 week)
-
-5. Add Framer Motion animations (3 days)
-6. Glassmorphism effects (1 day)
-7. Skeleton loading states (2 days)
-8. Empty state illustrations (1 day)
-
-**Result:** Modern, polished UI that competes visually
-
-### Phase 3: Feature Parity (2-3 weeks)
-
-9. Search & filtering (5 days)
-10. Notifications system (5 days)
-11. Recurring tasks (3 days)
-12. Calendar view (4 days)
-
-**Result:** Table-stakes features covered
-
-### Phase 4: Differentiation (2-4 weeks)
-
-13. Creator analytics dashboard (5 days)
-14. Focus mode (3 days)
-15. Smart task dependencies (7 days)
-16. Public API (7 days)
-
-**Result:** Unique selling propositions
+**Sprint Result:** Unique features that set TaskMan apart. Team can see who's overloading whom + understand project critical paths.
 
 ---
 
-## FINAL RECOMMENDATIONS
+## Sprint 8: Developer Experience & Scale
 
-### Do First (Maximum Impact, Minimum Effort)
+**Goal:** Attract developer users + prepare for scale
 
-1. **Dark Mode** - 3 days, CRITICAL for 2025
-2. **Color Themes** - 4 days, users love customization
-3. **Layout Templates** - 4 days, visual variety
-4. **shadcn/ui Integration** - 2 days, instant polish
+### Quick Win
+- [ ] **CLI Tool** (4 days)
+  - `taskman create "Write docs" --project="TaskMan" --priority=high`
+  - List tasks in terminal
+  - Quick capture from command line
+  - Position as "developer-first" tool
 
-**Total: 13 days to transform from "vanilla" to "modern"**
+### Substantial Tasks
+- [ ] **Public API + Webhooks** (10 days)
+  - RESTful API with API keys
+  - Webhooks for task events (created, updated, completed)
+  - Rate limiting, pagination, filtering
+  - Auto-generated OpenAPI docs
+  - Position as "task manager for developers"
 
-### Strategic Positioning
+- [ ] **Pagination System** (3 days) ⚠️ CRITICAL
+  - Backend: Cursor-based pagination
+  - Frontend: Infinite scroll or page buttons
+  - Required before scaling
 
-**Don't try to be Notion/Asana/Monday.com.** They have massive teams and budgets.
-
-**Instead, position as:**
-- "The task manager for developers" (leverage your tech stack)
-- "Fast, focused, no-nonsense" (anti-bloatware)
-- "Beautiful AND functional" (design + engineering)
-- "Privacy-first, self-hostable" (if you add Docker deployment)
-
-### Tech Debt to Address
-
-- Add pagination BEFORE scaling (current implementation will break)
-- Implement rate limiting on frontend API calls
-- Add error boundaries around all async operations
-- Set up E2E testing (Playwright) before adding more features
+**Sprint Result:** Developers can integrate TaskMan into their workflows. App won't break at scale.
 
 ---
 
-## SOURCES
+## Sprint 9: Advanced Capabilities
 
-Research compiled from the following sources:
+**Goal:** Cover remaining competitive features
+
+### Quick Wins
+- [ ] **Keyboard Shortcuts Guide** (1 day)
+  - `?` to show shortcuts modal
+  - Document all keyboard commands
+  - Printable cheat sheet
+
+- [ ] **Export Data** (2 days)
+  - Export tasks to CSV/JSON
+  - Data portability
+  - GDPR compliance
+
+### Substantial Task
+- [ ] **Natural Language Input** (10 days)
+  - Parse "Buy milk tomorrow at 3pm in Project X"
+  - Extract title, project, due date, priority
+  - Use NLP library (compromise, chrono-node)
+  - Smart quick-add bar
+  - Todoist-style experience
+
+**Sprint Result:** Users can capture tasks naturally without form fields.
+
+---
+
+## Sprint 10: Nice-to-Have Features
+
+**Goal:** Bonus features if time permits
+
+### Medium Tasks
+- [ ] **Habit Tracking** (5 days)
+  - Daily habits alongside tasks
+  - Streak tracking, calendar visualization
+  - TickTick's differentiator
+
+- [ ] **Collaborative Estimation** (4 days)
+  - Planning poker for team estimation
+  - T-shirt sizing, Fibonacci points
+  - Velocity tracking
+
+- [ ] **Voice Input** (7 days)
+  - Voice-to-task creation
+  - Use Web Speech API
+  - Mobile-friendly
+
+- [ ] **Burnout Prevention Dashboard** (5 days)
+  - Warn when team member is over-assigned
+  - Workload balancing suggestions
+  - Unique feature nobody has
+
+---
+
+## Critical Tech Debt (Address Alongside Sprints)
+
+These should be tackled incrementally, not as separate sprints:
+
+- [ ] **Pagination** (Sprint 8) - CRITICAL before scaling
+- [ ] **Rate Limiting** (Sprint 8) - Protect API
+- [ ] **E2E Testing** (Ongoing) - Set up Playwright, add tests per feature
+- [ ] **Error Boundaries** (Sprint 3) - Wrap async operations
+- [ ] **Performance Monitoring** (Sprint 6) - Add Sentry or similar
+- [ ] **Mobile Responsiveness Audit** (Sprint 4) - Ensure all features work on mobile
+
+---
+
+## UI Library Integrations (Use as Needed)
+
+Install these incrementally when relevant:
+
+- [ ] **shadcn/ui** - Command palette, dialogs, dropdowns (Sprint 3)
+- [ ] **Framer Motion** - Animations, page transitions (Sprint 3, 6)
+- [ ] **react-colorful** - Color picker (Sprint 2)
+- [ ] **react-big-calendar** or **FullCalendar** - Calendar view (Sprint 4)
+- [ ] **slate** or **tiptap** - Rich text editor for comments (Sprint 5)
+- [ ] **Aceternity UI** - Landing page wow factor (Marketing)
+
+---
+
+## Strategic Positioning
+
+**TaskMan's Identity:**
+- "The task manager for developers" (leverage TypeScript, API-first)
+- "Fast, focused, no-nonsense" (anti-bloatware vs. Notion/Monday.com)
+- "Privacy-first, self-hostable" (Docker deployment option)
+- "Beautiful AND functional" (design + engineering balance)
+
+**Unique Selling Points After Completion:**
+1. Creator accountability analytics (Sprint 7) - "Stop busywork"
+2. Smart task dependencies (Sprint 7) - "See your critical path"
+3. Developer-first (Sprint 8) - "API, CLI, webhooks"
+4. Focus mode (Sprint 7) - "Deep work built-in"
+5. Burnout prevention (Sprint 10) - "Protect your team"
+
+---
+
+## Competitor Feature Parity Checklist
+
+Comparing TaskMan to Todoist, TickTick, Things 3, Notion, Asana, Monday.com:
+
+### Must-Have (Table Stakes)
+- ✅ Dark mode
+- ✅ Search & filtering
+- ✅ Notifications
+- [ ] Recurring tasks (Sprint 3)
+- [ ] Calendar view (Sprint 4)
+- [ ] Time tracking (Sprint 4)
+- [ ] Comments (Sprint 5)
+- [ ] File attachments (Sprint 6)
+- [ ] Custom fields/tags (Sprint 6)
+- [ ] Activity logs (Sprint 5)
+
+### High-Value Differentiators
+- [ ] AI-powered insights (Sprint 2)
+- [ ] Command palette (Sprint 3)
+- [ ] Real-time WebSocket (Sprint 5)
+- [ ] Natural language input (Sprint 9)
+- [ ] Public API (Sprint 8)
+- [ ] Creator analytics (Sprint 7) - UNIQUE
+- [ ] Smart dependencies (Sprint 7) - UNIQUE
+- [ ] Focus mode (Sprint 7) - UNIQUE
+
+### Nice-to-Have
+- [ ] Voice input (Sprint 10)
+- [ ] Habit tracking (Sprint 10)
+- [ ] Collaborative estimation (Sprint 10)
+- [ ] Integrations (Post-MVP)
+
+---
+
+## Effort Summary by Sprint
+
+| Sprint | Quick Wins | Substantial Task | Total Days |
+|--------|-----------|------------------|------------|
+| 1 ✅    | 8 days    | -                | 8 days     |
+| 2      | 7-9 days  | 7 days           | 14-16 days |
+| 3      | 5 days    | 5 days           | 10 days    |
+| 4      | 3 days    | 7 days           | 10 days    |
+| 5      | 5 days    | 10 days          | 15 days    |
+| 6      | 3 days    | 10 days          | 13 days    |
+| 7      | 3 days    | 12 days          | 15 days    |
+| 8      | 4 days    | 13 days          | 17 days    |
+| 9      | 3 days    | 10 days          | 13 days    |
+| 10     | -         | 21 days          | 21 days    |
+
+**Total Development Time:** ~136 days (6-7 months) for complete roadmap
+
+**MVP (Sprints 1-6):** ~76 days (3.5 months) for competitive feature parity
+
+---
+
+## Next Immediate Actions
+
+From Sprint 2, prioritize these first:
+
+1. **Color Theme System** (4-5 days)
+   - File: `frontend/src/lib/themes.ts`
+   - Update Tailwind config with CSS variables
+   - Create theme picker modal
+
+2. **Layout Templates** (3-4 days)
+   - File: `frontend/src/store/layout.ts`
+   - 5 layout variants
+   - Layout switcher UI
+
+3. **AI Task Insights Foundation** (7 days)
+   - Backend: Analytics aggregation
+   - Track completion patterns
+   - Generate insights
+
+**Or** if you prefer immediate user-facing impact, jump to Sprint 3:
+- Command palette (2 days) - Instant power user love
+- Glassmorphism polish (3 days) - Visual wow factor
+
+---
+
+## Research Sources
 
 **Task Manager Reviews:**
 - [26 Best Personal Task Management Software Reviewed in 2026](https://thedigitalprojectmanager.com/tools/best-personal-task-management-software/)
 - [7 best to do list apps of 2026 | Zapier](https://zapier.com/blog/best-todo-list-apps/)
 - [Todoist vs TickTick (2026): Task Apps Compared](https://toolfinder.co/comparisons/todoist-vs-ticktick)
-- [Todoist vs Things 3 vs TickTick: Which Task Manager Is Best?](https://blog.rivva.app/p/todoist-vs-things-vs-ticktick)
 
 **Platform Comparisons:**
 - [Notion vs Asana vs Monday.com (2025 Comparison)](https://ones.com/blog/notion-vs-asana-vs-monday-com/)
@@ -515,52 +429,20 @@ Research compiled from the following sources:
 
 **UI/UX Trends:**
 - [10 UI/UX Design Trends That Will Dominate 2025 & Beyond](https://www.bootstrapdash.com/blog/ui-ux-design-trends)
-- [Dark Mode vs Light Mode: The Complete UX Guide for 2025](https://www.altersquare.io/dark-mode-vs-light-mode-the-complete-ux-guide-for-2025/)
-- [Dark Mode UI in the Spotlight: 11 Tips for Dark Theme Design in 2025](https://www.netguru.com/blog/tips-dark-mode-ui)
+- [Dark Mode vs Light Mode: The Complete UX Guide for 2025](https://altersquare.io/dark-mode-vs-light-mode-the-complete-ux-guide-for-2025/)
 
 **React Libraries:**
 - [14 Best React UI Component Libraries in 2026](https://www.untitledui.com/blog/react-component-libraries)
-- [React UI libraries in 2025: Comparing shadcn/ui, Radix, Mantine, MUI, Chakra & more](https://makersden.io/blog/react-ui-libs-2025-comparing-shadcn-radix-mantine-mui-chakra)
-- [15 Best React UI Libraries for 2026](https://www.builder.io/blog/react-component-libraries-2026)
+- [React UI libraries in 2025](https://makersden.io/blog/react-ui-libs-2025-comparing-shadcn-radix-mantine-mui-chakra)
 - [Motion — JavaScript & React animation library](https://motion.dev)
 - [10+ Trending Animated UI Component Libraries (2025 Edition)](https://dev.to/jay_sarvaiya_reactjs/10-trending-animated-ui-component-libraries-2025-edition-1af4)
 
 ---
 
-## Current Tech Stack (For Reference)
+## Current Tech Stack
 
-### Frontend
-- **Framework**: React 18.2.0 with TypeScript 5.4.2
-- **Build Tool**: Vite 5.1.6 with HMR support
-- **Routing**: React Router DOM v6.22.3
-- **State Management**: Zustand 4.5.2
-- **Data Fetching**: TanStack React Query 5.28.4
-- **Styling**: Tailwind CSS 3.4.1
-- **UI Components**: Lucide React 0.358.0 (icons)
-- **Drag & Drop**: dnd-kit 6.1.0
+**Frontend:** React 18.2, TypeScript 5.4, Vite 5.1, Tailwind CSS 3.4, Zustand 4.5, TanStack Query 5.28, dnd-kit 6.1
 
-### Backend
-- **Runtime**: Node.js 18+ with TypeScript 5.4.2
-- **Framework**: Express.js 4.18.3
-- **Database**: PostgreSQL 16 with Prisma ORM 5.10.0
-- **Authentication**: JWT tokens in HTTP-only cookies
-- **Validation**: Zod 3.22.4
+**Backend:** Node.js 18+, TypeScript 5.4, Express 4.18, PostgreSQL 16, Prisma 5.10, Zod 3.22
 
-### Current Features
-- Authentication (register, login, profile)
-- Project management with color customization
-- Task management (CRUD, status, priority, due dates, assignees)
-- Dual views: Table and Kanban (with drag-and-drop)
-- Role-based access control (OWNER, ADMIN, MEMBER, VIEWER)
-- Team/member management
-- Dashboard with statistics
-
-### Known Gaps
-- No dark mode
-- No search functionality
-- No notifications
-- No pagination (will break at scale)
-- No activity logs
-- No custom fields or tags
-- No file attachments
-- No recurring tasks
+**Current Features:** Authentication, Projects, Tasks (table + kanban), Role-based permissions, Dashboard, Dark mode ✅, Search ✅, Notifications ✅
