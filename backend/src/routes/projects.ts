@@ -79,18 +79,48 @@ function validateUUID(id: string, label: string): void {
 // GET /api/projects - List projects where user is owner or member
 router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const projects = await prisma.project.findMany({
-      where: {
-        OR: [
-          { ownerId: req.userId },
-          { members: { some: { userId: req.userId } } },
-        ],
-      },
-      include: projectInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+    const projectWhere = {
+      OR: [
+        { ownerId: req.userId },
+        { members: { some: { userId: req.userId } } },
+      ],
+    };
 
-    res.json(projects);
+    // Pagination: only when `page` query param is present (backward-compatible)
+    const wantsPagination = req.query.page !== undefined;
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string, 10) || 20));
+
+    if (wantsPagination) {
+      const [projects, total] = await Promise.all([
+        prisma.project.findMany({
+          where: projectWhere,
+          include: projectInclude,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.project.count({ where: projectWhere }),
+      ]);
+
+      res.json({
+        data: projects,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    } else {
+      const projects = await prisma.project.findMany({
+        where: projectWhere,
+        include: projectInclude,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      res.json(projects);
+    }
   } catch (error) {
     next(error);
   }

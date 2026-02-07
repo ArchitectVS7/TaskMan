@@ -74,6 +74,20 @@ export const authApi = {
     }),
 };
 
+// --- Pagination ---
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}
+
 // --- Tasks API ---
 
 export interface TaskFilters {
@@ -121,6 +135,16 @@ export const tasksApi = {
   delete: (id: string) =>
     request<void>(`/api/tasks/${id}`, { method: 'DELETE' }),
 
+  getPaginated: (filters?: TaskFilters, page = 1, limit = 20) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (filters) {
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v) params.set(k, v);
+      });
+    }
+    return request<PaginatedResponse<Task>>(`/api/tasks?${params}`);
+  },
+
   bulkStatus: (taskIds: string[], status: TaskStatus) =>
     request<{ updated: number }>('/api/tasks/bulk-status', {
       method: 'PATCH',
@@ -133,6 +157,9 @@ export const tasksApi = {
 export const projectsApi = {
   getAll: () =>
     request<Project[]>('/api/projects'),
+
+  getPaginated: (page = 1, limit = 20) =>
+    request<PaginatedResponse<Project>>(`/api/projects?page=${page}&limit=${limit}`),
 
   getOne: (id: string) =>
     request<Project>(`/api/projects/${id}`),
