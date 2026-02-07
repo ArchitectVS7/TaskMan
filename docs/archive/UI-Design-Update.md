@@ -1,4 +1,3 @@
-# ⚠️ DEPERECATED - See [UI-Design-Open-Items.md](./UI-Design-Open-Items.md)
 # TaskMan Development Roadmap
 
 ## Sprint-Based Feature Checklist
