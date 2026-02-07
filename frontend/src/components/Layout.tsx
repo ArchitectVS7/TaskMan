@@ -6,11 +6,14 @@ import { useDensityStore } from '../store/density';
 import { pageTransition } from '../lib/animations';
 
 import { authApi } from '../lib/api';
-import { LayoutDashboard, CheckSquare, FolderKanban, LogOut, User, Crosshair } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, FolderKanban, Calendar, LogOut, User, Crosshair } from 'lucide-react';
+import TimerWidget from './TimerWidget';
 import clsx from 'clsx';
 import ToastContainer from './Toast';
 import ThemeToggle from './ThemeToggle';
 import NotificationCenter from './NotificationCenter';
+import ConnectionStatus from './ConnectionStatus';
+import { useSocket } from '../hooks/useSocket';
 import CommandPalette from './CommandPalette';
 import KeyboardShortcutsModal from './KeyboardShortcutsModal';
 import { useCommandPalette } from '../hooks/useCommandPalette';
@@ -19,6 +22,7 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/tasks', label: 'Tasks', icon: CheckSquare },
   { to: '/projects', label: 'Projects', icon: FolderKanban },
+  { to: '/calendar', label: 'Calendar', icon: Calendar },
   { to: '/focus', label: 'Focus', icon: Crosshair },
 ];
 
@@ -28,6 +32,7 @@ export default function Layout() {
   const { layout } = useLayoutStore();
   const { density } = useDensityStore();
   useCommandPalette();
+  useSocket();
 
   const handleLogout = async () => {
     try { await authApi.logout(); } catch { /* server unreachable is fine */ }
@@ -95,6 +100,8 @@ export default function Layout() {
             </div>
           )}
 
+          <ConnectionStatus />
+
           <div className="space-y-1">
             <Link
               to="/profile"
@@ -140,9 +147,9 @@ export default function Layout() {
         </AnimatePresence>
       </main>
       <ToastContainer />
+      <TimerWidget />
       <CommandPalette />
       <KeyboardShortcutsModal />
     </div>
   );
 }
-

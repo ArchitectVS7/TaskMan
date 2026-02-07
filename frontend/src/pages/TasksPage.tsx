@@ -4,15 +4,19 @@ import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, closestCorners, 
 import { AnimatePresence, motion } from 'framer-motion';
 import { tasksApi, projectsApi, recurringTasksApi, exportApi } from '../lib/api';
 import { useAuthStore } from '../store/auth';
-import { Plus, Table, Columns3, X, Calendar, Pencil, Trash2, Repeat, Download } from 'lucide-react';
+import { Plus, Table, Columns3, Calendar as CalendarIcon, Pencil, Trash2, Repeat, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import type { Task, Project, TaskStatus, TaskPriority } from '../types';
 import type { TaskFilters, PaginationMeta } from '../lib/api';
 import TaskCompletionCelebration from '../components/TaskCompletionCelebration';
 import RecurrencePickerModal, { RecurrenceConfig } from '../components/RecurrencePickerModal';
+import { TableSkeleton, KanbanSkeleton } from '../components/Skeletons';
+import { EmptyTasksState } from '../components/EmptyStates';
+import CalendarView from '../components/CalendarView';
+import TaskDetailModal from '../components/TaskDetailModal';
+import type { TaskFormData } from '../components/TaskDetailModal';
 import { modalOverlay, modalContent, taskCardHover } from '../lib/animations';
-import { TasksTableSkeleton } from '../components/Skeletons';
 import Pagination from '../components/Pagination';
 
 // --- Constants ---
@@ -55,184 +59,7 @@ function canEditTask(task: Task, currentUserId: string, projects: Project[]): bo
   return membership.role === 'MEMBER' && task.creatorId === currentUserId;
 }
 
-// --- Task Modal ---
-
-interface TaskFormData {
-  title: string;
-  description: string;
-  projectId: string;
-  assigneeId: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  dueDate: string;
-}
-
-function TaskModal({
-  task,
-  projects,
-  currentUserId,
-  onClose,
-  onSubmit,
-  isSubmitting,
-}: {
-  task: Task | null;
-  projects: Project[];
-  currentUserId: string;
-  onClose: () => void;
-  onSubmit: (data: TaskFormData) => void;
-  isSubmitting: boolean;
-}) {
-  const [form, setForm] = useState<TaskFormData>({
-    title: '',
-    description: '',
-    projectId: '',
-    assigneeId: '',
-    status: 'TODO',
-    priority: 'MEDIUM',
-    dueDate: '',
-  });
-
-  useEffect(() => {
-    if (task) {
-      setForm({
-        title: task.title,
-        description: task.description || '',
-        projectId: task.projectId,
-        assigneeId: task.assigneeId || '',
-        status: task.status,
-        priority: task.priority,
-        dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
-      });
-    } else {
-      setForm({ title: '', description: '', projectId: '', assigneeId: '', status: 'TODO', priority: 'MEDIUM', dueDate: '' });
-    }
-  }, [task]);
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [onClose]);
-
-  // Only show projects where user has write access
-  const writableProjects = projects.filter((p) => {
-    const membership = p.members?.find((m) => m.userId === currentUserId);
-    return membership && ['OWNER', 'ADMIN', 'MEMBER'].includes(membership.role);
-  });
-
-  // Assignee options from selected project's members
-  const selectedProject = projects.find((p) => p.id === form.projectId);
-  const assigneeOptions = selectedProject?.members || [];
-
-  // Reset assignee if not in new project
-  useEffect(() => {
-    if (form.assigneeId && !assigneeOptions.find((m) => m.userId === form.assigneeId)) {
-      setForm((f) => ({ ...f, assigneeId: '' }));
-    }
-  }, [form.projectId, assigneeOptions, form.assigneeId]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(form);
-  };
-
-  return (
-    <motion.div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      onClick={onClose}
-      {...modalOverlay}
-    >
-      <motion.div
-        className="glass-card dark:glass-card-dark rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-        {...modalContent}
-      >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{task ? 'Edit Task' : 'New Task'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X size={20} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title *</label>
-            <input type="text" required maxLength={200} value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              placeholder="Task title" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-            <textarea rows={3} maxLength={2000} value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-              placeholder="Optional description" />
-          </div>
-          {!task && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project *</label>
-              <select required value={form.projectId}
-                onChange={(e) => setForm((f) => ({ ...f, projectId: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Select a project</option>
-                {writableProjects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
-              <select value={form.status}
-                onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as TaskStatus }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm">
-                <option value="TODO">To Do</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="IN_REVIEW">In Review</option>
-                <option value="DONE">Done</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
-              <select value={form.priority}
-                onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as TaskPriority }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm">
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assignee</label>
-            <select value={form.assigneeId} disabled={!form.projectId}
-              onChange={(e) => setForm((f) => ({ ...f, assigneeId: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-500">
-              <option value="">Unassigned</option>
-              {assigneeOptions.map((m) => (
-                <option key={m.userId} value={m.userId}>{m.user.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date</label>
-            <input type="date" value={form.dueDate}
-              onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm" />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">Cancel</button>
-            <button type="submit" disabled={isSubmitting || !form.title.trim() || (!task && !form.projectId)}
-              className="px-4 py-2 text-sm text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 rounded-md disabled:opacity-50">
-              {isSubmitting ? 'Saving...' : task ? 'Update' : 'Create'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </motion.div>
-  );
-}
+// TaskFormData imported from TaskDetailModal
 
 // --- Delete Confirmation ---
 
@@ -459,7 +286,7 @@ function DraggableTaskCard({ task, onEdit, canEdit }: { task: Task; onEdit: (tas
         </div>
         {task.dueDate && (
           <span className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-0.5">
-            <Calendar size={9} />
+            <CalendarIcon size={9} />
             {format(new Date(task.dueDate), 'MMM d')}
           </span>
         )}
@@ -559,8 +386,8 @@ export default function TasksPage() {
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
 
-  const [viewMode, setViewMode] = useState<'table' | 'kanban'>(
-    () => (localStorage.getItem('task-view-mode') as 'table' | 'kanban') || 'table'
+  const [viewMode, setViewMode] = useState<'table' | 'kanban' | 'calendar'>(
+    () => (localStorage.getItem('task-view-mode') as 'table' | 'kanban' | 'calendar') || 'table'
   );
   const [filters, setFilters] = useState<TaskFilters>({});
   const [modalOpen, setModalOpen] = useState(false);
@@ -709,11 +536,6 @@ export default function TasksPage() {
     },
   });
 
-  const handleMakeRecurring = (task: Task) => {
-    setTaskForRecurrence(task);
-    setRecurrenceModalOpen(true);
-  };
-
   const handleRecurrenceSubmit = (config: RecurrenceConfig) => {
     if (!taskForRecurrence) return;
     createRecurringMutation.mutate({
@@ -738,7 +560,7 @@ export default function TasksPage() {
   };
 
   if (isLoading) {
-    return <TasksTableSkeleton />;
+    return viewMode === 'kanban' ? <KanbanSkeleton /> : <TableSkeleton />;
   }
 
   if (isError) {
@@ -776,6 +598,16 @@ export default function TasksPage() {
             >
               <Columns3 size={14} />
               Kanban
+            </button>
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={clsx(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors',
+                viewMode === 'calendar' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              )}
+            >
+              <CalendarIcon size={14} />
+              Calendar
             </button>
           </div>
           {/* Export Menu */}
@@ -865,7 +697,9 @@ export default function TasksPage() {
       </div>
 
       {/* Views */}
-      {viewMode === 'table' ? (
+      {tasks.length === 0 && !filters.projectId && !filters.status && !filters.priority ? (
+        <EmptyTasksState onCreateTask={() => { setEditingTask(null); setModalOpen(true); }} />
+      ) : viewMode === 'table' ? (
         <TableView
           tasks={tasks}
           projects={projects}
@@ -874,7 +708,7 @@ export default function TasksPage() {
           onEdit={handleEdit}
           onDelete={(task) => setDeletingTask(task)}
         />
-      ) : (
+      ) : viewMode === 'kanban' ? (
         <KanbanView
           tasks={tasks}
           projects={projects}
@@ -882,12 +716,20 @@ export default function TasksPage() {
           onEdit={handleEdit}
           onBulkStatus={handleBulkStatus}
         />
+      ) : (
+        <CalendarView
+          tasks={tasks.filter((t) => t.dueDate)}
+          onTaskDateChange={(taskId, newDate) => {
+            updateMutation.mutate({ id: taskId, data: { dueDate: newDate } });
+          }}
+          onTaskClick={handleEdit}
+        />
       )}
 
       {/* Task Modal */}
       <AnimatePresence>
         {modalOpen && (
-          <TaskModal
+          <TaskDetailModal
             task={editingTask}
             projects={projects}
             currentUserId={currentUser!.id}

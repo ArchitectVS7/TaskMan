@@ -4,9 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '../lib/api';
 import { useAuthStore } from '../store/auth';
 import { Plus, Trash2, Users, CheckSquare, X } from 'lucide-react';
+import { ProjectCardSkeleton } from '../components/Skeletons';
+import { EmptyProjectsState } from '../components/EmptyStates';
 import clsx from 'clsx';
-import { ProjectsPageSkeleton } from '../components/Skeletons';
-import EmptyState from '../components/EmptyState';
 import type { Project } from '../types';
 
 const PRESET_COLORS = [
@@ -232,7 +232,14 @@ export default function ProjectsPage() {
   };
 
   if (isLoading) {
-    return <ProjectsPageSkeleton />;
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Projects</h1>
+        </div>
+        <ProjectCardSkeleton />
+      </div>
+    );
   }
 
   if (isError) {
@@ -257,15 +264,7 @@ export default function ProjectsPage() {
       </div>
 
       {!projects || projects.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <EmptyState
-            type="projects"
-            title="No projects yet"
-            description="Projects help you organize related tasks together. Create your first one to get started."
-            actionLabel="Create Project"
-            onAction={() => setModalOpen(true)}
-          />
-        </div>
+        <EmptyProjectsState onCreateProject={() => setModalOpen(true)} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((project) => (
