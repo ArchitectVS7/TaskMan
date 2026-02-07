@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '../lib/api';
 import { useAuthStore } from '../store/auth';
 import { Plus, Trash2, Users, CheckSquare, X } from 'lucide-react';
+import { ProjectCardSkeleton } from '../components/Skeletons';
+import { EmptyProjectsState } from '../components/EmptyStates';
 import clsx from 'clsx';
 import type { Project } from '../types';
 
@@ -231,8 +233,11 @@ export default function ProjectsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400" />
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Projects</h1>
+        </div>
+        <ProjectCardSkeleton />
       </div>
     );
   }
@@ -259,16 +264,7 @@ export default function ProjectsPage() {
       </div>
 
       {!projects || projects.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <p className="text-gray-500 dark:text-gray-400 mb-4">No projects yet. Create your first project to get started.</p>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 rounded-md"
-          >
-            <Plus size={16} />
-            Create Project
-          </button>
-        </div>
+        <EmptyProjectsState onCreateProject={() => setModalOpen(true)} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((project) => (

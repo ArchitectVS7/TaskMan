@@ -4,14 +4,17 @@ import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, closestCorners, 
 import { motion } from 'framer-motion';
 import { tasksApi, projectsApi, recurringTasksApi } from '../lib/api';
 import { useAuthStore } from '../store/auth';
-import { Plus, Table, Columns3, X, Calendar, Pencil, Trash2, Repeat } from 'lucide-react';
+import { Plus, Table, Columns3, X, Calendar as CalendarIcon, Pencil, Trash2, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import type { Task, Project, TaskStatus, TaskPriority } from '../types';
 import type { TaskFilters } from '../lib/api';
 import TaskCompletionCelebration from '../components/TaskCompletionCelebration';
 import RecurrencePickerModal, { RecurrenceConfig } from '../components/RecurrencePickerModal';
-import { slideUp } from '../lib/animations';
+import { TableSkeleton, KanbanSkeleton } from '../components/Skeletons';
+import { EmptyTasksState } from '../components/EmptyStates';
+import CalendarView from '../components/CalendarView';
+import TaskTimePanel from '../components/TaskTimePanel';
 
 // --- Constants ---
 
@@ -216,6 +219,7 @@ function TaskModal({
               onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm" />
           </div>
+          {task && <TaskTimePanel taskId={task.id} />}
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose}
               className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">Cancel</button>
@@ -446,7 +450,7 @@ function DraggableTaskCard({ task, onEdit, canEdit }: { task: Task; onEdit: (tas
         </div>
         {task.dueDate && (
           <span className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-0.5">
-            <Calendar size={9} />
+            <CalendarIcon size={9} />
             {format(new Date(task.dueDate), 'MMM d')}
           </span>
         )}
@@ -546,8 +550,8 @@ export default function TasksPage() {
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
 
-  const [viewMode, setViewMode] = useState<'table' | 'kanban'>(
-    () => (localStorage.getItem('task-view-mode') as 'table' | 'kanban') || 'table'
+  const [viewMode, setViewMode] = useState<'table' | 'kanban' | 'calendar'>(
+    () => (localStorage.getItem('task-view-mode') as 'table' | 'kanban' | 'calendar') || 'table'
   );
   const [filters, setFilters] = useState<TaskFilters>({});
   const [modalOpen, setModalOpen] = useState(false);
@@ -704,11 +708,7 @@ export default function TasksPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400" />
-      </div>
-    );
+    return viewMode === 'kanban' ? <KanbanSkeleton /> : <TableSkeleton />;
   }
 
   if (isError) {
@@ -746,6 +746,16 @@ export default function TasksPage() {
             >
               <Columns3 size={14} />
               Kanban
+            </button>
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={clsx(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors',
+                viewMode === 'calendar' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              )}
+            >
+              <CalendarIcon size={14} />
+              Calendar
             </button>
           </div>
           <button
@@ -811,7 +821,9 @@ export default function TasksPage() {
       </div>
 
       {/* Views */}
-      {viewMode === 'table' ? (
+      {tasks.length === 0 && !filters.projectId && !filters.status && !filters.priority ? (
+        <EmptyTasksState onCreateTask={() => { setEditingTask(null); setModalOpen(true); }} />
+      ) : viewMode === 'table' ? (
         <TableView
           tasks={tasks}
           projects={projects}
@@ -820,13 +832,21 @@ export default function TasksPage() {
           onEdit={handleEdit}
           onDelete={(task) => setDeletingTask(task)}
         />
-      ) : (
+      ) : viewMode === 'kanban' ? (
         <KanbanView
           tasks={tasks}
           projects={projects}
           currentUserId={currentUser!.id}
           onEdit={handleEdit}
           onBulkStatus={handleBulkStatus}
+        />
+      ) : (
+        <CalendarView
+          tasks={tasks.filter((t) => t.dueDate)}
+          onTaskDateChange={(taskId, newDate) => {
+            updateMutation.mutate({ id: taskId, data: { dueDate: newDate } });
+          }}
+          onTaskClick={handleEdit}
         />
       )}
 

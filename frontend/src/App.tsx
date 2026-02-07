@@ -12,6 +12,7 @@ import TasksPage from './pages/TasksPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import ProfilePage from './pages/ProfilePage';
+import CalendarPage from './pages/CalendarPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="tasks" element={<TasksPage />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="projects/:id" element={<ProjectDetailPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
       </Routes>

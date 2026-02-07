@@ -1,5 +1,5 @@
 import { useAuthStore } from '../store/auth';
-import type { User, Task, Project, ProjectMember, TaskStatus, TaskPriority, RecurringTask, RecurrenceFrequency } from '../types';
+import type { User, Task, Project, ProjectMember, TaskStatus, TaskPriority, RecurringTask, RecurrenceFrequency, TimeEntry } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
@@ -205,4 +205,75 @@ export const recurringTasksApi = {
 
   generateNext: (id: string) =>
     request<Task>(`/api/recurring-tasks/${id}/generate`, { method: 'POST' }),
+};
+
+// --- Time Entries API ---
+
+export interface TimeEntryFilters {
+  taskId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface TimeEntryStats {
+  totalSeconds: number;
+  entryCount: number;
+  byTask: { taskId: string; title: string; seconds: number }[];
+  byDay: { date: string; seconds: number }[];
+}
+
+export const timeEntriesApi = {
+  getAll: (filters?: TimeEntryFilters) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v) params.set(k, v);
+      });
+    }
+    const qs = params.toString();
+    return request<TimeEntry[]>(`/api/time-entries${qs ? `?${qs}` : ''}`);
+  },
+
+  getOne: (id: string) =>
+    request<TimeEntry>(`/api/time-entries/${id}`),
+
+  getActive: () =>
+    request<TimeEntry | null>('/api/time-entries/active'),
+
+  getStats: (filters?: { taskId?: string; projectId?: string; dateFrom?: string; dateTo?: string }) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v) params.set(k, v);
+      });
+    }
+    const qs = params.toString();
+    return request<TimeEntryStats>(`/api/time-entries/stats${qs ? `?${qs}` : ''}`);
+  },
+
+  create: (data: {
+    taskId: string;
+    startTime: string;
+    endTime?: string;
+    duration?: number;
+    description?: string;
+  }) =>
+    request<TimeEntry>('/api/time-entries', { method: 'POST', body: JSON.stringify(data) }),
+
+  update: (id: string, data: {
+    startTime?: string;
+    endTime?: string;
+    duration?: number;
+    description?: string;
+  }) =>
+    request<TimeEntry>(`/api/time-entries/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  delete: (id: string) =>
+    request<void>(`/api/time-entries/${id}`, { method: 'DELETE' }),
+
+  start: (data: { taskId: string; description?: string }) =>
+    request<TimeEntry>('/api/time-entries/start', { method: 'POST', body: JSON.stringify(data) }),
+
+  stop: (id: string) =>
+    request<TimeEntry>(`/api/time-entries/${id}/stop`, { method: 'POST' }),
 };

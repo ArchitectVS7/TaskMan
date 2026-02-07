@@ -57,6 +57,20 @@ export interface Task {
   creator: Pick<User, 'id' | 'name'>;
 }
 
+// --- Time Entry ---
+
+export interface TimeEntry {
+  id: string;
+  taskId: string;
+  userId: string;
+  startTime: string;
+  endTime: string | null;
+  duration: number | null;
+  description: string | null;
+  createdAt: string;
+  task?: Pick<Task, 'id' | 'title' | 'project'>;
+}
+
 // --- Recurring Task ---
 
 export type RecurrenceFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CUSTOM';
