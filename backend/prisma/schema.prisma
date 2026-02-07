@@ -60,9 +60,11 @@ model Task {
   assigneeId String? @map("assignee_id")
   assignee   User?   @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
 
-  creatorId   String      @map("creator_id")
-  creator     User        @relation("TaskCreator", fields: [creatorId], references: [id], onDelete: Cascade)
-  timeEntries TimeEntry[]
+  creatorId      String         @map("creator_id")
+  creator        User           @relation("TaskCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  recurringTask     RecurringTask?  @relation("GeneratedTasks", fields: [recurringTaskId], references: [id], onDelete: SetNull)
+  baseForRecurring  RecurringTask[] @relation("BaseTask")
+  timeEntries       TimeEntry[]
 
   @@index([projectId])
   @@index([assigneeId])
@@ -164,12 +166,15 @@ model RecurringTask {
   lastGenerated DateTime?           @map("last_generated")
   createdAt     DateTime            @default(now()) @map("created_at")
 
+  baseTask  Task    @relation("BaseTask", fields: [baseTaskId], references: [id], onDelete: Cascade)
   projectId String  @map("project_id")
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  creatorId String @map("creator_id")
-  creator   User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId      String @map("creator_id")
+  creator        User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  generatedTasks Task[] @relation("GeneratedTasks")
 
+  @@index([baseTaskId])
   @@index([projectId])
   @@index([creatorId])
   @@map("recurring_tasks")

@@ -14,7 +14,7 @@ const createRecurringTaskSchema = z.object({
   baseTaskId: z.string().uuid('Invalid base task ID'),
   frequency: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'CUSTOM']),
   interval: z.number().int().min(1).max(365).default(1),
-  daysOfWeek: z.string().optional(), // "0,1,2" for Sun,Mon,Tue
+  daysOfWeek: z.string().regex(/^[0-6](,[0-6]){0,6}$/, 'Must be comma-separated days 0-6 (Sun-Sat)').optional(),
   dayOfMonth: z.number().int().min(1).max(31).optional(),
   startDate: z.string().datetime(),
   endDate: z.string().datetime().optional().nullable(),
