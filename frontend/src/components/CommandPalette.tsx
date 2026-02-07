@@ -11,9 +11,11 @@ import {
   Plus,
   Search,
   X,
+  Zap,
   type LucideIcon
 } from 'lucide-react';
 import type { Task } from '../types';
+import SmartTaskInput from './SmartTaskInput';
 
 interface Command {
   id: string;
@@ -30,6 +32,7 @@ export default function CommandPalette() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchResults, setSearchResults] = useState<Task[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [quickCreateMode, setQuickCreateMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const navigationCommands: Command[] = [
@@ -69,6 +72,13 @@ export default function CommandPalette() {
       label: 'Create New Task',
       icon: Plus,
       action: () => { navigate('/tasks?new=true'); close(); },
+      group: 'tasks',
+    },
+    {
+      id: 'task-quick-create',
+      label: 'Quick Create (Natural Language)',
+      icon: Zap,
+      action: () => { setQuickCreateMode(true); setQuery(''); },
       group: 'tasks',
     },
   ];
@@ -140,6 +150,7 @@ export default function CommandPalette() {
       setQuery('');
       setSearchResults([]);
       setSelectedIndex(0);
+      setQuickCreateMode(false);
     }
   }, [isOpen]);
 
@@ -207,44 +218,56 @@ export default function CommandPalette() {
 
         {/* Results */}
         <div className="max-h-96 overflow-y-auto">
-          {allItems.length === 0 && !isSearching && (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              No results found
+          {quickCreateMode ? (
+            <div className="p-4">
+              <SmartTaskInput
+                autoFocus
+                onCreated={() => { close(); }}
+                onCancel={() => setQuickCreateMode(false)}
+              />
             </div>
+          ) : (
+            <>
+              {allItems.length === 0 && !isSearching && (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                  No results found
+                </div>
+              )}
+
+              {isSearching && (
+                <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                  Searching...
+                </div>
+              )}
+
+              {allItems.map((item, index) => {
+                const Icon = item.icon;
+                const isSelected = index === selectedIndex;
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={item.action}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                      isSelected
+                        ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <Icon size={18} />
+                    <span className="flex-1 text-sm font-medium">{item.label}</span>
+                    {item.group === 'navigation' && (
+                      <span className="text-xs text-gray-400 dark:text-gray-500">Navigate</span>
+                    )}
+                    {item.group === 'tasks' && item.id.startsWith('task-') && item.id !== 'task-new' && item.id !== 'task-quick-create' && (
+                      <span className="text-xs text-gray-400 dark:text-gray-500">Task</span>
+                    )}
+                  </button>
+                );
+              })}
+            </>
           )}
-
-          {isSearching && (
-            <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-              Searching...
-            </div>
-          )}
-
-          {allItems.map((item, index) => {
-            const Icon = item.icon;
-            const isSelected = index === selectedIndex;
-
-            return (
-              <button
-                key={item.id}
-                onClick={item.action}
-                onMouseEnter={() => setSelectedIndex(index)}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
-                  isSelected
-                    ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <Icon size={18} />
-                <span className="flex-1 text-sm font-medium">{item.label}</span>
-                {item.group === 'navigation' && (
-                  <span className="text-xs text-gray-400 dark:text-gray-500">Navigate</span>
-                )}
-                {item.group === 'tasks' && item.id.startsWith('task-') && item.id !== 'task-new' && (
-                  <span className="text-xs text-gray-400 dark:text-gray-500">Task</span>
-                )}
-              </button>
-            );
-          })}
         </div>
 
         {/* Footer hint */}

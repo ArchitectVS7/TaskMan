@@ -7,6 +7,7 @@ import { pageTransition } from '../lib/animations';
 
 import { authApi } from '../lib/api';
 import { LayoutDashboard, CheckSquare, FolderKanban, Calendar, LogOut, User, Crosshair } from 'lucide-react';
+import ErrorBoundary from './ErrorBoundary';
 import TimerWidget from './TimerWidget';
 import clsx from 'clsx';
 import ToastContainer from './Toast';
@@ -136,6 +137,7 @@ export default function Layout() {
           gap: `var(--density-gap)`,
         }}
       >
+        <ErrorBoundary key={location.pathname}>
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -145,6 +147,7 @@ export default function Layout() {
             <Outlet />
           </motion.div>
         </AnimatePresence>
+        </ErrorBoundary>
       </main>
       <ToastContainer />
       <TimerWidget />

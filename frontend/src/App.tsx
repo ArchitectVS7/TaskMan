@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from './store/auth';
 import { authApi } from './lib/api';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/LoadingSpinner';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -56,6 +57,7 @@ function SessionValidator({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <SessionValidator>
       <Routes>
         <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
@@ -71,5 +73,6 @@ export default function App() {
         </Route>
       </Routes>
     </SessionValidator>
+    </ErrorBoundary>
   );
 }

@@ -4,7 +4,7 @@ import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, closestCorners, 
 import { AnimatePresence, motion } from 'framer-motion';
 import { tasksApi, projectsApi, recurringTasksApi, exportApi } from '../lib/api';
 import { useAuthStore } from '../store/auth';
-import { Plus, Table, Columns3, Calendar as CalendarIcon, Pencil, Trash2, Repeat, Download } from 'lucide-react';
+import { Plus, Table, Columns3, Calendar as CalendarIcon, Pencil, Trash2, Repeat, Download, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import type { Task, Project, TaskStatus, TaskPriority } from '../types';
@@ -18,6 +18,7 @@ import TaskDetailModal from '../components/TaskDetailModal';
 import type { TaskFormData } from '../components/TaskDetailModal';
 import { modalOverlay, modalContent, taskCardHover } from '../lib/animations';
 import Pagination from '../components/Pagination';
+import SmartTaskInput from '../components/SmartTaskInput';
 
 // --- Constants ---
 
@@ -398,6 +399,7 @@ export default function TasksPage() {
   const [taskForRecurrence, setTaskForRecurrence] = useState<Task | null>(null);
   const [exporting, setExporting] = useState(false);
   const [page, setPage] = useState(1);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('task-view-mode', viewMode);
@@ -635,6 +637,18 @@ export default function TasksPage() {
             </div>
           </div>
           <button
+            onClick={() => setShowQuickAdd((v) => !v)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm border rounded-md transition-colors ${
+              showQuickAdd
+                ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
+                : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+            title="Quick create with natural language"
+          >
+            <Zap size={14} />
+            Quick Add
+          </button>
+          <button
             onClick={() => { setEditingTask(null); setModalOpen(true); }}
             className="flex items-center gap-2 px-4 py-2 text-sm text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 rounded-md"
           >
@@ -695,6 +709,23 @@ export default function TasksPage() {
           </button>
         )}
       </div>
+
+      {/* Quick Add Bar */}
+      <AnimatePresence>
+        {showQuickAdd && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-4 overflow-hidden"
+          >
+            <SmartTaskInput
+              onCreated={() => setShowQuickAdd(false)}
+              onCancel={() => setShowQuickAdd(false)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Views */}
       {tasks.length === 0 && !filters.projectId && !filters.status && !filters.priority ? (
