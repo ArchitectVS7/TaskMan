@@ -53,7 +53,7 @@ const upload = multer({
     if (ALLOWED_MIMES.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new AppError(`File type ${file.mimetype} is not allowed`, 400) as unknown as null);
+      cb(new AppError(`File type ${file.mimetype} is not allowed`, 400));
     }
   },
 });
