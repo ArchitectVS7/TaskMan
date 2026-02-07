@@ -8,6 +8,9 @@ import clsx from 'clsx';
 import ToastContainer from './Toast';
 import ThemeToggle from './ThemeToggle';
 import NotificationCenter from './NotificationCenter';
+import CommandPalette from './CommandPalette';
+import KeyboardShortcutsModal from './KeyboardShortcutsModal';
+import { useCommandPalette } from '../hooks/useCommandPalette';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -112,6 +115,7 @@ export default function Layout() {
       </main>
       <ToastContainer />
       <CommandPalette />
+      <KeyboardShortcutsModal />
     </div>
   );
 }
