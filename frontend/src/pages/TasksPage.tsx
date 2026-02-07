@@ -139,6 +139,7 @@ function TableView({
             <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Assignee</th>
             <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Creator</th>
             <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Dependencies</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Recurrence</th>
             <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Due</th>
             <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">Actions</th>
           </tr>
@@ -245,6 +246,14 @@ function TableView({
                     <span className="text-xs text-gray-400 dark:text-gray-500">--</span>
                   )}
                 </div>
+              </td>
+              <td className="px-4 py-3">
+                {task.isRecurring && (
+                  <span className="text-[10px] px-2 py-1 rounded font-medium text-purple-700 dark:text-purple-300" style={{ backgroundColor: 'color-mix(in srgb, #a855f7 20%, transparent)' }}>
+                    🔄 Repeats
+                  </span>
+                )}
+                {!task.isRecurring && <span className="text-xs text-gray-400 dark:text-gray-500">--</span>}
               </td>
               <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
                 {task.dueDate ? format(new Date(task.dueDate), 'MMM d, yyyy') : '--'}

@@ -80,7 +80,7 @@ function TaskCard({ task }: { task: Task }) {
           <span className="text-xs text-gray-500 dark:text-gray-400">{task.project.name}</span>
         </div>
       </div>
-      {/* Creator and assignee info */}
+      {/* Dependencies and recurring info */}
       <div className="flex items-center gap-3 mt-3 pt-2 border-t border-gray-100 dark:border-gray-700 flex-wrap">
         {(task._count?.dependsOn ?? 0) > 0 && (
           <div className="flex items-center gap-1 px-2 py-1 bg-red-50 dark:bg-red-900/20 rounded text-red-700 dark:text-red-300">
@@ -90,6 +90,11 @@ function TaskCard({ task }: { task: Task }) {
         {(task._count?.dependedOnBy ?? 0) > 0 && (
           <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded text-blue-700 dark:text-blue-300">
             <span className="text-xs font-medium">🔗 Blocks {task._count!.dependedOnBy}</span>
+          </div>
+        )}
+        {task.isRecurring && (
+          <div className="flex items-center gap-1 px-2 py-1 rounded text-purple-700 dark:text-purple-300 font-medium text-xs" style={{ backgroundColor: 'color-mix(in srgb, #a855f7 20%, transparent)' }}>
+            🔄 Repeats
           </div>
         )}
       </div>
