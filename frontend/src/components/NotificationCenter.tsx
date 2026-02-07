@@ -1,86 +1,48 @@
-import { useState, useEffect, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, X, Check, CheckCheck } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Bell, X, Check, CheckCheck, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import clsx from 'clsx';
-
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-  taskId?: string;
-  projectId?: string;
-}
-
-async function fetchNotifications(): Promise<Notification[]> {
-  const res = await fetch('/api/notifications', {
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to fetch notifications');
-  return res.json();
-}
-
-async function fetchUnreadCount(): Promise<{ count: number }> {
-  const res = await fetch('/api/notifications/unread-count', {
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to fetch unread count');
-  return res.json();
-}
-
-async function markNotificationsRead(notificationIds: string[]): Promise<void> {
-  const res = await fetch('/api/notifications/mark-read', {
-    method: 'PATCH',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ notificationIds }),
-  });
-  if (!res.ok) throw new Error('Failed to mark notifications as read');
-}
-
-async function markAllNotificationsRead(): Promise<void> {
-  const res = await fetch('/api/notifications/mark-all-read', {
-    method: 'PATCH',
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to mark all notifications as read');
-}
-
-async function deleteNotification(id: string): Promise<void> {
-  const res = await fetch(`/api/notifications/${id}`, {
-    method: 'DELETE',
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to delete notification');
-}
+import { notificationsApi } from '../lib/api';
+import type { NotificationItem } from '../lib/api';
 
 export default function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  // Fetch notifications
-  const { data: notifications = [], isLoading } = useQuery({
+  // Fetch notifications with cursor-based pagination
+  const {
+    data: infiniteData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['notifications'],
-    queryFn: fetchNotifications,
-    refetchInterval: 60000, // Poll every 60 seconds (WebSocket is primary)
+    queryFn: ({ pageParam }) => notificationsApi.getCursorPaginated(pageParam, 20),
+    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
+    refetchInterval: 60000,
   });
+
+  const notifications = useMemo(
+    () => infiniteData?.pages.flatMap((page) => page.data) ?? [],
+    [infiniteData]
+  );
 
   // Fetch unread count
   const { data: unreadData } = useQuery({
     queryKey: ['notifications', 'unread-count'],
-    queryFn: fetchUnreadCount,
-    refetchInterval: 60000, // Poll every 60 seconds (WebSocket is primary)
+    queryFn: notificationsApi.getUnreadCount,
+    refetchInterval: 60000,
   });
 
   const unreadCount = unreadData?.count || 0;
 
   // Mark as read mutation
   const markReadMutation = useMutation({
-    mutationFn: markNotificationsRead,
+    mutationFn: notificationsApi.markRead,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
@@ -88,7 +50,7 @@ export default function NotificationCenter() {
 
   // Mark all as read mutation
   const markAllReadMutation = useMutation({
-    mutationFn: markAllNotificationsRead,
+    mutationFn: notificationsApi.markAllRead,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
@@ -96,7 +58,7 @@ export default function NotificationCenter() {
 
   // Delete notification mutation
   const deleteMutation = useMutation({
-    mutationFn: deleteNotification,
+    mutationFn: notificationsApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
@@ -116,7 +78,7 @@ export default function NotificationCenter() {
     }
   }, [isOpen]);
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = (notification: NotificationItem) => {
     // Mark as read if unread
     if (!notification.read) {
       markReadMutation.mutate([notification.id]);
@@ -232,6 +194,23 @@ export default function NotificationCenter() {
                     </div>
                   </div>
                 ))}
+                {/* Load More */}
+                {hasNextPage && (
+                  <button
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    className="w-full py-3 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    {isFetchingNextPage ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Load more notifications'
+                    )}
+                  </button>
+                )}
               </div>
             )}
           </div>

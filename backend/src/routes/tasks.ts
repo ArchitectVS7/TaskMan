@@ -225,12 +225,52 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
     const allowedSortFields = ['createdAt', 'updatedAt', 'title', 'status', 'priority', 'dueDate'];
     const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
 
-    // Pagination: only when `page` query param is present (backward-compatible)
+    // Pagination modes (in priority order):
+    // 1. Cursor-based: when `cursor` key is in query (even empty = first page)
+    // 2. Offset-based: when `page` query param is present (backward-compatible)
+    // 3. Raw array: no pagination params (backward-compatible)
+    const hasCursorParam = 'cursor' in req.query;
+    const cursorId = (req.query.cursor as string) || undefined;
     const wantsPagination = req.query.page !== undefined;
-    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string, 10) || 20));
 
-    if (wantsPagination) {
+    if (hasCursorParam) {
+      // Cursor-based pagination
+      // Secondary sort on id ensures deterministic ordering for stable cursor traversal
+      const findArgs: any = {
+        where,
+        include: taskInclude,
+        orderBy: [{ [safeSortBy]: order }, { id: 'asc' }],
+        take: limit + 1, // fetch one extra to determine hasMore
+      };
+
+      if (cursorId) {
+        findArgs.cursor = { id: cursorId };
+        findArgs.skip = 1; // skip the cursor record itself
+      }
+
+      const [results, total] = await Promise.all([
+        prisma.task.findMany(findArgs),
+        prisma.task.count({ where }),
+      ]);
+
+      const hasMore = results.length > limit;
+      const data = hasMore ? results.slice(0, limit) : results;
+      const nextCursor = data.length > 0 ? data[data.length - 1].id : null;
+
+      res.json({
+        data,
+        pagination: {
+          nextCursor: hasMore ? nextCursor : null,
+          hasMore,
+          limit,
+          total,
+        },
+      });
+    } else if (wantsPagination) {
+      // Offset-based pagination (backward-compatible)
+      const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+
       const [tasks, total] = await Promise.all([
         prisma.task.findMany({
           where,
@@ -252,6 +292,7 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
         },
       });
     } else {
+      // Raw array (backward-compatible)
       const tasks = await prisma.task.findMany({
         where,
         include: taskInclude,
@@ -478,24 +519,55 @@ router.get('/:id/activity', async (req: AuthRequest, res: Response, next: NextFu
       throw new AppError('Task not found', 404);
     }
 
+    const hasCursorParam = 'cursor' in req.query;
+    const cursorId = (req.query.cursor as string) || undefined;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
 
-    const activityLogs = await prisma.activityLog.findMany({
-      where: { taskId: req.params.id },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true,
-          },
-        },
-      },
-    });
+    const userSelect = {
+      id: true,
+      name: true,
+      avatarUrl: true,
+    };
 
-    res.json(activityLogs);
+    if (hasCursorParam) {
+      // Cursor-based pagination
+      // Secondary sort on id ensures deterministic ordering for stable cursor traversal
+      const findArgs: any = {
+        where: { taskId: req.params.id },
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        take: limit + 1,
+        include: { user: { select: userSelect } },
+      };
+
+      if (cursorId) {
+        findArgs.cursor = { id: cursorId };
+        findArgs.skip = 1;
+      }
+
+      const results = await prisma.activityLog.findMany(findArgs);
+      const hasMore = results.length > limit;
+      const data = hasMore ? results.slice(0, limit) : results;
+      const nextCursor = data.length > 0 ? data[data.length - 1].id : null;
+
+      res.json({
+        data,
+        pagination: {
+          nextCursor: hasMore ? nextCursor : null,
+          hasMore,
+          limit,
+        },
+      });
+    } else {
+      // Raw array (backward-compatible)
+      const activityLogs = await prisma.activityLog.findMany({
+        where: { taskId: req.params.id },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        include: { user: { select: userSelect } },
+      });
+
+      res.json(activityLogs);
+    }
   } catch (error) {
     next(error);
   }

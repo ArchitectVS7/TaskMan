@@ -91,7 +91,7 @@ The app has reached competitive feature parity. The remaining work is about **di
 | CLI Tool | **NOT DONE** | No CLI directory or package in project |
 | Public API + API Keys | **NOT DONE** | No ApiKey model, no API key auth middleware |
 | Webhooks | **NOT DONE** | No Webhook model, no dispatch system |
-| Pagination | **NOT DONE** | All queries load full result sets. No cursor, no infinite scroll |
+| Pagination | **DONE** | Cursor-based pagination on tasks, notifications, activity logs. Frontend useInfiniteQuery with load-more. 21 tests. |
 
 ### Sprint 9: Advanced Capabilities -- MOSTLY COMPLETE
 
@@ -111,7 +111,7 @@ All items (Habit Tracking, Collaborative Estimation, Voice Input, Burnout Preven
 
 | Item | Status | Priority |
 |------|--------|----------|
-| Pagination | **NOT DONE** | CRITICAL -- app will break at scale |
+| Pagination | **DONE** | Cursor-based on tasks, notifications, activity logs |
 | Rate Limiting | DONE (auth endpoints) | Extend to other endpoints with public API |
 | E2E Testing | NOT DONE | HIGH -- no Playwright setup |
 | Error Boundaries | NOT DONE | MEDIUM -- prevents white-screen crashes |
@@ -152,18 +152,19 @@ Enums: TaskStatus, Priority, ProjectRole, NotificationType, ActivityAction, Recu
 
 ## Recommended Priority Sequence
 
-### P0: CRITICAL -- Do First
+### P0: CRITICAL -- COMPLETE
 
-#### 1. Pagination System (3 days)
-**Why:** Every list endpoint currently returns unbounded results. This will cause performance degradation and potential OOM errors as data grows. Blocks public API work (Sprint 8) since external consumers need paginated responses.
+#### 1. Pagination System (3 days) -- DONE
+**Why:** Every list endpoint previously returned unbounded results. Now resolved with cursor-based pagination.
 
-**Scope:**
-- Backend: Cursor-based pagination on `GET /api/tasks`, `GET /api/notifications`, activity logs
-- Frontend: `useInfiniteQuery` in TasksPage, load-more or infinite scroll
-- Tests: Pagination correctness, max limit enforcement, cursor + filter interaction
+**Scope (all delivered):**
+- Backend: Cursor-based pagination on `GET /api/tasks`, `GET /api/notifications`, `GET /api/tasks/:id/activity`
+- Frontend: `useInfiniteQuery` in TasksPage, NotificationCenter, ActivityTimeline with load-more buttons
+- Tests: 21 tests covering pagination correctness, max limit enforcement, cursor + filter interaction, backward compatibility
+- Backward compatibility: offset-based pagination and raw array responses still work
 
 **Depends on:** Nothing
-**Blocks:** Public API (Sprint 8), scale readiness
+**Blocks:** Public API (Sprint 8), scale readiness -- **UNBLOCKED**
 
 ---
 

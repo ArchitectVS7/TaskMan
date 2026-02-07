@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import { Plus, Pencil, Trash2, MessageSquare, History } from 'lucide-react';
+import { Plus, Pencil, Trash2, MessageSquare, History, Loader2 } from 'lucide-react';
 import { activityLogsApi } from '../lib/api';
 import type { ActivityLog, ActivityAction } from '../types';
 
@@ -105,10 +106,23 @@ function ActivityEntry({ log }: { log: ActivityLog }) {
 }
 
 export default function ActivityTimeline({ taskId }: { taskId: string }) {
-  const { data: logs = [], isLoading } = useQuery({
+  const {
+    data: infiniteData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['activity-logs', taskId],
-    queryFn: () => activityLogsApi.getByTask(taskId),
+    queryFn: ({ pageParam }) => activityLogsApi.getCursorPaginated(taskId, pageParam, 20),
+    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
   });
+
+  const logs = useMemo(
+    () => infiniteData?.pages.flatMap((page) => page.data) ?? [],
+    [infiniteData]
+  );
 
   if (isLoading) {
     return (
@@ -132,6 +146,22 @@ export default function ActivityTimeline({ taskId }: { taskId: string }) {
       {logs.map((log) => (
         <ActivityEntry key={log.id} log={log} />
       ))}
+      {hasNextPage && (
+        <button
+          onClick={() => fetchNextPage()}
+          disabled={isFetchingNextPage}
+          className="w-full py-3 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex items-center justify-center gap-2"
+        >
+          {isFetchingNextPage ? (
+            <>
+              <Loader2 size={14} className="animate-spin" />
+              Loading...
+            </>
+          ) : (
+            'Load more activity'
+          )}
+        </button>
+      )}
     </div>
   );
 }
