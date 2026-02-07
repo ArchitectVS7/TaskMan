@@ -145,13 +145,19 @@ function TableView({
           </tr>
         </thead>
         <tbody>
-          {tasks.map((task) => (
+          {tasks.map((task, index) => (
             <motion.tr
               key={task.id}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
-              className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className={clsx(
+                'border-b border-gray-100 dark:border-gray-700 transition-colors',
+                index % 2 === 0
+                  ? 'bg-gray-50/50 dark:bg-gray-900/30'
+                  : 'bg-white dark:bg-gray-800/50',
+                'hover:bg-gray-100 dark:hover:bg-gray-700'
+              )}
             >
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
