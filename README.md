@@ -216,6 +216,10 @@ Quick summary:
 - JWT token expiration
 - Comprehensive error handling
 
+## Documentation Automation
+
+TaskMan treats `docs/PRD.md` as the single source of truth for feature behavior and UI expectations. The intent is to derive both the user manual and in-app help content from the same modular content blocks. For details on the planned modular documentation workflow and contributor expectations, see `docs/DOCUMENTATION_AUTOMATION.md`.
+
 ## Contributing
 
 1. Create a feature branch from main
