@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, closestCorners, useDroppable, useDraggable } from '@dnd-kit/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { tasksApi, projectsApi, recurringTasksApi, exportApi } from '../lib/api';
 import { useAuthStore } from '../store/auth';
-import { Plus, Table, Columns3, Calendar as CalendarIcon, Pencil, Trash2, Repeat, Download, Zap } from 'lucide-react';
+import { Plus, Table, Columns3, Calendar as CalendarIcon, Pencil, Trash2, Repeat, Download, Zap, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import type { Task, Project, TaskStatus, TaskPriority } from '../types';
-import type { TaskFilters, PaginationMeta } from '../lib/api';
+import type { TaskFilters } from '../lib/api';
 import TaskCompletionCelebration from '../components/TaskCompletionCelebration';
 import RecurrencePickerModal, { RecurrenceConfig } from '../components/RecurrencePickerModal';
 import { TableSkeleton, KanbanSkeleton } from '../components/Skeletons';
@@ -17,7 +17,6 @@ import CalendarView from '../components/CalendarView';
 import TaskDetailModal from '../components/TaskDetailModal';
 import type { TaskFormData } from '../components/TaskDetailModal';
 import { modalOverlay, modalContent, taskCardHover } from '../lib/animations';
-import Pagination from '../components/Pagination';
 import SmartTaskInput from '../components/SmartTaskInput';
 
 // --- Constants ---
@@ -398,25 +397,32 @@ export default function TasksPage() {
   const [recurrenceModalOpen, setRecurrenceModalOpen] = useState(false);
   const [taskForRecurrence, setTaskForRecurrence] = useState<Task | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [page, setPage] = useState(1);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('task-view-mode', viewMode);
   }, [viewMode]);
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [filters]);
-
-  const { data: paginatedResult, isLoading, isError, error } = useQuery({
-    queryKey: ['tasks', filters, page],
-    queryFn: () => tasksApi.getPaginated(filters, page, 20),
+  const {
+    data: infiniteData,
+    isLoading,
+    isError,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['tasks', filters],
+    queryFn: ({ pageParam }) => tasksApi.getCursorPaginated(filters, pageParam, 20),
+    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
-  const tasks = paginatedResult?.data ?? [];
-  const paginationMeta: PaginationMeta | null = paginatedResult?.pagination ?? null;
+  const tasks = useMemo(
+    () => infiniteData?.pages.flatMap((page) => page.data) ?? [],
+    [infiniteData]
+  );
+  const totalTasks = infiniteData?.pages[0]?.pagination.total ?? 0;
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -795,8 +801,33 @@ export default function TasksPage() {
         />
       )}
 
-      {/* Pagination */}
-      {paginationMeta && <Pagination pagination={paginationMeta} onPageChange={setPage} />}
+      {/* Load More */}
+      {hasNextPage && (
+        <div className="flex items-center justify-center mt-6 gap-3">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            Showing {tasks.length} of {totalTasks}
+          </span>
+          <button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-md disabled:opacity-50 transition-colors"
+          >
+            {isFetchingNextPage ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Loading...
+              </>
+            ) : (
+              'Load More'
+            )}
+          </button>
+        </div>
+      )}
+      {!hasNextPage && tasks.length > 0 && totalTasks > 20 && (
+        <p className="text-center mt-6 text-sm text-gray-400 dark:text-gray-500">
+          Showing all {totalTasks} tasks
+        </p>
+      )}
 
       {/* Confetti Celebration */}
       <TaskCompletionCelebration trigger={celebrateCompletion} />

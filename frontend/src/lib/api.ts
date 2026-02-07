@@ -1,5 +1,5 @@
 import { useAuthStore } from '../store/auth';
-import type { User, Task, Project, ProjectMember, TaskStatus, TaskPriority, RecurringTask, RecurrenceFrequency, TimeEntry, Comment, ActivityLog, Tag, TaskTag, CustomFieldDefinition, CustomFieldType, CustomFieldValue, Attachment } from '../types';
+import type { User, Task, Project, ProjectMember, TaskStatus, TaskPriority, RecurringTask, RecurrenceFrequency, TimeEntry, Comment, ActivityLog, Tag, TaskTag, CustomFieldDefinition, CustomFieldType, CustomFieldValue, Attachment, CreatorMetricsData } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
@@ -88,6 +88,18 @@ export interface PaginatedResponse<T> {
   pagination: PaginationMeta;
 }
 
+export interface CursorPaginationMeta {
+  nextCursor: string | null;
+  hasMore: boolean;
+  limit: number;
+  total: number;
+}
+
+export interface CursorPaginatedResponse<T> {
+  data: T[];
+  pagination: CursorPaginationMeta;
+}
+
 // --- Tasks API ---
 
 export interface TaskFilters {
@@ -143,6 +155,16 @@ export const tasksApi = {
       });
     }
     return request<PaginatedResponse<Task>>(`/api/tasks?${params}`);
+  },
+
+  getCursorPaginated: (filters?: TaskFilters, cursor?: string, limit = 20) => {
+    const params = new URLSearchParams({ limit: String(limit), cursor: cursor || '' });
+    if (filters) {
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v) params.set(k, v);
+      });
+    }
+    return request<CursorPaginatedResponse<Task>>(`/api/tasks?${params}`);
   },
 
   bulkStatus: (taskIds: string[], status: TaskStatus) =>
@@ -202,6 +224,8 @@ export interface AnalyticsData {
 
 export const analyticsApi = {
   getInsights: () => request<AnalyticsData>('/api/analytics/insights'),
+  getCreatorMetrics: (projectId: string) =>
+    request<CreatorMetricsData>(`/api/analytics/creator-metrics?projectId=${projectId}`),
 };
 
 // --- Recurring Tasks API ---
@@ -327,12 +351,60 @@ export const commentsApi = {
     request<void>(`/api/comments/${id}`, { method: 'DELETE' }),
 };
 
+// --- Notifications API ---
+
+export interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  taskId?: string;
+  projectId?: string;
+}
+
+export const notificationsApi = {
+  getAll: (unreadOnly?: boolean) => {
+    const qs = unreadOnly ? '?unreadOnly=true' : '';
+    return request<NotificationItem[]>(`/api/notifications${qs}`);
+  },
+
+  getCursorPaginated: (cursor?: string, limit = 20, unreadOnly?: boolean) => {
+    const params = new URLSearchParams({ limit: String(limit), cursor: cursor || '' });
+    if (unreadOnly) params.set('unreadOnly', 'true');
+    return request<CursorPaginatedResponse<NotificationItem>>(`/api/notifications?${params}`);
+  },
+
+  getUnreadCount: () =>
+    request<{ count: number }>('/api/notifications/unread-count'),
+
+  markRead: (notificationIds: string[]) =>
+    request<{ message: string }>('/api/notifications/mark-read', {
+      method: 'PATCH',
+      body: JSON.stringify({ notificationIds }),
+    }),
+
+  markAllRead: () =>
+    request<{ message: string }>('/api/notifications/mark-all-read', {
+      method: 'PATCH',
+    }),
+
+  delete: (id: string) =>
+    request<void>(`/api/notifications/${id}`, { method: 'DELETE' }),
+};
+
 // --- Activity Logs API ---
 
 export const activityLogsApi = {
   getByTask: (taskId: string, limit?: number) => {
     const qs = limit ? `?limit=${limit}` : '';
     return request<ActivityLog[]>(`/api/tasks/${taskId}/activity${qs}`);
+  },
+
+  getCursorPaginated: (taskId: string, cursor?: string, limit = 20) => {
+    const params = new URLSearchParams({ limit: String(limit), cursor: cursor || '' });
+    return request<CursorPaginatedResponse<ActivityLog>>(`/api/tasks/${taskId}/activity?${params}`);
   },
 };
 

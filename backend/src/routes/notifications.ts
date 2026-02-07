@@ -15,10 +15,13 @@ const markReadSchema = z.object({
 
 // --- Routes ---
 
-// GET /api/notifications - Get all notifications for current user
+// GET /api/notifications - Get notifications for current user
 router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const unreadOnly = req.query.unreadOnly === 'true';
+    const hasCursorParam = 'cursor' in req.query;
+    const cursorId = (req.query.cursor as string) || undefined;
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string, 10) || 20));
 
     const where: any = {
       userId: req.userId!,
@@ -28,13 +31,48 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
       where.read = false;
     }
 
-    const notifications = await prisma.notification.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: 50, // Limit to 50 most recent
-    });
+    if (hasCursorParam) {
+      // Cursor-based pagination
+      // Secondary sort on id ensures deterministic ordering for stable cursor traversal
+      const findArgs: any = {
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        take: limit + 1,
+      };
 
-    res.json(notifications);
+      if (cursorId) {
+        findArgs.cursor = { id: cursorId };
+        findArgs.skip = 1;
+      }
+
+      const [results, total] = await Promise.all([
+        prisma.notification.findMany(findArgs),
+        prisma.notification.count({ where }),
+      ]);
+
+      const hasMore = results.length > limit;
+      const data = hasMore ? results.slice(0, limit) : results;
+      const nextCursor = data.length > 0 ? data[data.length - 1].id : null;
+
+      res.json({
+        data,
+        pagination: {
+          nextCursor: hasMore ? nextCursor : null,
+          hasMore,
+          limit,
+          total,
+        },
+      });
+    } else {
+      // Raw array (backward-compatible) - limited to 50
+      const notifications = await prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      });
+
+      res.json(notifications);
+    }
   } catch (error) {
     next(error);
   }
