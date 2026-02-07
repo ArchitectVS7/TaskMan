@@ -1,6 +1,9 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore } from '../store/auth';
 import { useLayoutStore } from '../store/layout';
+import { useDensityStore } from '../store/density';
+import { pageTransition } from '../lib/animations';
 
 import { authApi } from '../lib/api';
 import { LayoutDashboard, CheckSquare, FolderKanban, LogOut, User } from 'lucide-react';
@@ -108,7 +111,15 @@ export default function Layout() {
         </div>
       </aside>
       <main className={clsx("flex-1 overflow-auto", mainPadding)}>
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            {...pageTransition}
+            className="h-full"
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
       <ToastContainer />
       <CommandPalette />

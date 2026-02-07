@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, closestCorners, useDroppable, useDraggable } from '@dnd-kit/core';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { tasksApi, projectsApi, recurringTasksApi } from '../lib/api';
 import { useAuthStore } from '../store/auth';
 import { Plus, Table, Columns3, X, Calendar, Pencil, Trash2, Repeat } from 'lucide-react';
@@ -11,7 +11,7 @@ import type { Task, Project, TaskStatus, TaskPriority } from '../types';
 import type { TaskFilters } from '../lib/api';
 import TaskCompletionCelebration from '../components/TaskCompletionCelebration';
 import RecurrencePickerModal, { RecurrenceConfig } from '../components/RecurrencePickerModal';
-import { slideUp } from '../lib/animations';
+import { slideUp, modalOverlay, modalContent, taskCardHover } from '../lib/animations';
 
 // --- Constants ---
 
@@ -135,13 +135,15 @@ function TaskModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+    <motion.div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={onClose}
+      {...modalOverlay}
+    >
       <motion.div
         className="glass-card dark:glass-card-dark rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        {...modalContent}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{task ? 'Edit Task' : 'New Task'}</h2>
@@ -226,7 +228,7 @@ function TaskModal({
           </div>
         </form>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
 
