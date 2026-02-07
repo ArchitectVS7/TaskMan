@@ -14,6 +14,7 @@ test.describe('Navigation', () => {
     await expect(page.getByRole('link', { name: 'Projects' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Calendar' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Focus' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Creators' })).toBeVisible();
   });
 
   test('can navigate to Tasks page', async ({ page }) => {
