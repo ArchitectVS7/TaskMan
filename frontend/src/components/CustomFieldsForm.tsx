@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { customFieldsApi } from '../lib/api';
-import type { CustomFieldDefinition, CustomFieldValue } from '../types';
+import type { CustomFieldDefinition } from '../types';
 
 interface CustomFieldsFormProps {
   projectId: string;
