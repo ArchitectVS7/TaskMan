@@ -32,6 +32,7 @@ const shortcutGroups: ShortcutGroup[] = [
       { keys: [modKey, 'K', '→', 'Tasks'], description: 'Go to Tasks' },
       { keys: [modKey, 'K', '→', 'Projects'], description: 'Go to Projects' },
       { keys: [modKey, 'K', '→', 'Profile'], description: 'Go to Profile' },
+      { keys: [modKey, 'K', '→', 'Focus'], description: 'Enter Focus Mode' },
     ],
   },
   {
