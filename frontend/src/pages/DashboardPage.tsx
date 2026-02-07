@@ -31,7 +31,8 @@ const PRIORITY_COLORS: Record<TaskPriority, string> = {
 
 function StatCard({ title, value, icon: Icon, color }: { title: string; value: number; icon: React.ElementType; color: string }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+      <div className="h-1 bg-[var(--primary-base)] rounded-t-lg -mx-4 -mt-4 mb-4" />
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
@@ -62,6 +63,38 @@ function TaskCard({ task }: { task: Task }) {
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: task.project.color }} />
           <span className="text-xs text-gray-500 dark:text-gray-400">{task.project.name}</span>
         </div>
+      </div>
+      {/* Creator and assignee info */}
+      <div className="flex items-center gap-3 mt-3 pt-2 border-t border-gray-100 dark:border-gray-700 flex-wrap">
+        {(task._count?.dependsOn ?? 0) > 0 && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-red-50 dark:bg-red-900/20 rounded text-red-700 dark:text-red-300">
+            <span className="text-xs font-medium">⚠️ {task._count!.dependsOn} blocker{task._count!.dependsOn > 1 ? 's' : ''}</span>
+          </div>
+        )}
+        {(task._count?.dependedOnBy ?? 0) > 0 && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded text-blue-700 dark:text-blue-300">
+            <span className="text-xs font-medium">🔗 Blocks {task._count!.dependedOnBy}</span>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-3 mt-2 flex-wrap">
+        {task.assignee && (
+          <div className="flex items-center gap-1">
+            <div className="w-5 h-5 rounded-full bg-[var(--primary-base)] text-white flex items-center justify-center text-xs font-semibold">
+              {task.assignee.name.charAt(0).toUpperCase()}
+            </div>
+            <span className="text-xs text-gray-600 dark:text-gray-400">{task.assignee.name}</span>
+          </div>
+        )}
+        {task.creator && (
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-400">→</span>
+            <div className="w-5 h-5 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100 flex items-center justify-center text-xs font-semibold">
+              {task.creator.name.charAt(0).toUpperCase()}
+            </div>
+            <span className="text-xs text-gray-600 dark:text-gray-400">{task.creator.name}</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -117,7 +150,7 @@ export default function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard title="Total Tasks" value={stats.total} icon={ListTodo} color="bg-indigo-500" />
+        <StatCard title="Total Tasks" value={stats.total} icon={ListTodo} color="bg-[var(--primary-base)]" />
         <StatCard title="Completed" value={stats.completed} icon={CheckCircle2} color="bg-green-500" />
         <StatCard title="In Progress" value={stats.inProgress} icon={Clock} color="bg-blue-500" />
         <StatCard title="Urgent" value={stats.urgent} icon={AlertTriangle} color="bg-red-500" />
@@ -128,7 +161,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Tasks</h2>
-            <Link to="/tasks" className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">View all →</Link>
+            <Link to="/tasks" className="text-sm text-[var(--primary-base)] hover:opacity-80 transition-opacity">View all →</Link>
           </div>
           {recentTasks.length > 0 ? (
             <div className="grid gap-3">
@@ -153,7 +186,7 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Projects</h2>
-            <Link to="/projects" className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">View all →</Link>
+            <Link to="/projects" className="text-sm text-[var(--primary-base)] hover:opacity-80 transition-opacity">View all →</Link>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             {recentProjects.length > 0 ? (

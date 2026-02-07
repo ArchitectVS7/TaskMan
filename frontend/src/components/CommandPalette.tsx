@@ -252,7 +252,7 @@ export default function CommandPalette() {
                         onClick={item.action}
                         onMouseEnter={() => setSelectedIndex(index)}
                         className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${isSelected
-                          ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
+                          ? 'bg-[var(--primary-light)] dark:bg-[var(--primary-dark)] text-[var(--primary-base)]'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                           }`}
                       >
