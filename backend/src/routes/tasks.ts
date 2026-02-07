@@ -225,13 +225,41 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
     const allowedSortFields = ['createdAt', 'updatedAt', 'title', 'status', 'priority', 'dueDate'];
     const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
 
-    const tasks = await prisma.task.findMany({
-      where,
-      include: taskInclude,
-      orderBy: { [safeSortBy]: order },
-    });
+    // Pagination: only when `page` query param is present (backward-compatible)
+    const wantsPagination = req.query.page !== undefined;
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string, 10) || 20));
 
-    res.json(tasks);
+    if (wantsPagination) {
+      const [tasks, total] = await Promise.all([
+        prisma.task.findMany({
+          where,
+          include: taskInclude,
+          orderBy: { [safeSortBy]: order },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.task.count({ where }),
+      ]);
+
+      res.json({
+        data: tasks,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    } else {
+      const tasks = await prisma.task.findMany({
+        where,
+        include: taskInclude,
+        orderBy: { [safeSortBy]: order },
+      });
+
+      res.json(tasks);
+    }
   } catch (error) {
     next(error);
   }

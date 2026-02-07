@@ -8,7 +8,7 @@ import { Plus, Table, Columns3, Calendar as CalendarIcon, Pencil, Trash2, Repeat
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import type { Task, Project, TaskStatus, TaskPriority } from '../types';
-import type { TaskFilters } from '../lib/api';
+import type { TaskFilters, PaginationMeta } from '../lib/api';
 import TaskCompletionCelebration from '../components/TaskCompletionCelebration';
 import RecurrencePickerModal, { RecurrenceConfig } from '../components/RecurrencePickerModal';
 import { TableSkeleton, KanbanSkeleton } from '../components/Skeletons';
@@ -17,6 +17,7 @@ import CalendarView from '../components/CalendarView';
 import TaskDetailModal from '../components/TaskDetailModal';
 import type { TaskFormData } from '../components/TaskDetailModal';
 import { modalOverlay, modalContent, taskCardHover } from '../lib/animations';
+import Pagination from '../components/Pagination';
 
 // --- Constants ---
 
@@ -396,15 +397,24 @@ export default function TasksPage() {
   const [recurrenceModalOpen, setRecurrenceModalOpen] = useState(false);
   const [taskForRecurrence, setTaskForRecurrence] = useState<Task | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     localStorage.setItem('task-view-mode', viewMode);
   }, [viewMode]);
 
-  const { data: tasks = [], isLoading, isError, error } = useQuery({
-    queryKey: ['tasks', filters],
-    queryFn: () => tasksApi.getAll(filters),
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
+
+  const { data: paginatedResult, isLoading, isError, error } = useQuery({
+    queryKey: ['tasks', filters, page],
+    queryFn: () => tasksApi.getPaginated(filters, page, 20),
   });
+
+  const tasks = paginatedResult?.data ?? [];
+  const paginationMeta: PaginationMeta | null = paginatedResult?.pagination ?? null;
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -753,6 +763,9 @@ export default function TasksPage() {
           isSubmitting={createRecurringMutation.isPending}
         />
       )}
+
+      {/* Pagination */}
+      {paginationMeta && <Pagination pagination={paginationMeta} onPageChange={setPage} />}
 
       {/* Confetti Celebration */}
       <TaskCompletionCelebration trigger={celebrateCompletion} />
