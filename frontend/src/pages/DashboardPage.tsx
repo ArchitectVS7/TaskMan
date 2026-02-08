@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { tasksApi, projectsApi } from '../lib/api';
-import { Clock } from 'lucide-react';
+import { Clock, CheckCircle2, AlertTriangle, ListTodo } from 'lucide-react';
 import InsightsWidget from '../components/InsightsWidget';
 import { DashboardSkeleton } from '../components/Skeletons';
 import EmptyState from '../components/EmptyState';
 import { useAuthStore } from '../store/auth';
 import clsx from 'clsx';
 import type { Project } from '../types';
-
 
 function StatCard({ title, value, icon: Icon, color }: { title: string; value: number; icon: React.ElementType; color: string }) {
   return (
