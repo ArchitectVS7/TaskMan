@@ -236,7 +236,14 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response, next: Ne
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
-      select: userSelect,
+      select: {
+        ...userSelect,
+        achievements: {
+          include: {
+            achievement: true,
+          },
+        },
+      },
     });
 
     if (!user) {

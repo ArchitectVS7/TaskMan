@@ -18,6 +18,8 @@ import { useSocket } from '../hooks/useSocket';
 import CommandPalette from './CommandPalette';
 import KeyboardShortcutsModal from './KeyboardShortcutsModal';
 import { useCommandPalette } from '../hooks/useCommandPalette';
+import { HelpButton } from './Help/HelpButton';
+import { HelpSidebar } from './Help/HelpSidebar';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -105,7 +107,10 @@ export default function Layout() {
             </div>
           )}
 
-          <ConnectionStatus />
+          <div className="flex items-center justify-between">
+            <ConnectionStatus />
+            <HelpButton />
+          </div>
 
           <div className="space-y-1">
             <Link
@@ -142,21 +147,22 @@ export default function Layout() {
         }}
       >
         <ErrorBoundary key={location.pathname}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            {...pageTransition}
-            className="h-full"
-          >
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              {...pageTransition}
+              className="h-full"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </ErrorBoundary>
       </main>
       <ToastContainer />
       <TimerWidget />
       <CommandPalette />
       <KeyboardShortcutsModal />
+      <HelpSidebar />
     </div>
   );
 }

@@ -19,6 +19,9 @@ import CreatorDashboardPage from './pages/CreatorDashboardPage';
 import DependenciesDashboardPage from './pages/DependenciesDashboardPage';
 import ApiKeysPage from './pages/ApiKeysPage';
 import WebhooksPage from './pages/WebhooksPage';
+import HelpPage from './pages/HelpPage';
+import DocumentationCMSPage from './pages/DocumentationCMSPage';
+import { HelpProvider } from './context/HelpContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
@@ -63,23 +66,27 @@ export default function App() {
   return (
     <ErrorBoundary>
       <SessionValidator>
-        <Routes>
-          <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
-          <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
-          <Route path="/focus" element={<ProtectedRoute><FocusPage /></ProtectedRoute>} />
-          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route index element={<DashboardPage />} />
-            <Route path="tasks" element={<TasksPage />} />
-            <Route path="projects" element={<ProjectsPage />} />
-            <Route path="projects/:id" element={<ProjectDetailPage />} />
-            <Route path="calendar" element={<CalendarPage />} />
-            <Route path="creator-dashboard" element={<CreatorDashboardPage />} />
-            <Route path="dependencies" element={<DependenciesDashboardPage />} />
-            <Route path="api-keys" element={<ApiKeysPage />} />
-            <Route path="webhooks" element={<WebhooksPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-          </Route>
-        </Routes>
+        <HelpProvider>
+          <Routes>
+            <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+            <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+            <Route path="/focus" element={<ProtectedRoute><FocusPage /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route index element={<DashboardPage />} />
+              <Route path="tasks" element={<TasksPage />} />
+              <Route path="projects" element={<ProjectsPage />} />
+              <Route path="projects/:id" element={<ProjectDetailPage />} />
+              <Route path="calendar" element={<CalendarPage />} />
+              <Route path="creator-dashboard" element={<CreatorDashboardPage />} />
+              <Route path="dependencies" element={<DependenciesDashboardPage />} />
+              <Route path="api-keys" element={<ApiKeysPage />} />
+              <Route path="webhooks" element={<WebhooksPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="help" element={<HelpPage />} />
+              <Route path="admin/docs" element={<DocumentationCMSPage />} />
+            </Route>
+          </Routes>
+        </HelpProvider>
       </SessionValidator>
     </ErrorBoundary>
   );

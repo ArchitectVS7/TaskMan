@@ -27,6 +27,7 @@ model User {
   attachments    Attachment[]
   apiKeys        ApiKey[]
   webhooks       Webhook[]
+  achievements   UserAchievement[]
 
   @@map("users")
 }
@@ -399,4 +400,28 @@ model WebhookLog {
   @@index([webhookId])
   @@index([createdAt])
   @@map("webhook_logs")
+}
+model Achievement {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String
+  icon        String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  userId        String   @map("user_id")
+  achievementId String   @map("achievement_id")
+  unlockedAt    DateTime @default(now()) @map("unlocked_at")
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+  @@map("user_achievements")
 }

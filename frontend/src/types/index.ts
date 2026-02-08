@@ -6,6 +6,23 @@ export interface User {
   name: string;
   avatarUrl: string | null;
   createdAt: string;
+  achievements?: UserAchievement[];
+}
+
+export interface Achievement {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  icon: string | null;
+  createdAt: string;
+}
+
+export interface UserAchievement {
+  userId: string;
+  achievementId: string;
+  unlockedAt: string;
+  achievement: Achievement;
 }
 
 // --- Project ---

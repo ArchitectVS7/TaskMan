@@ -7,7 +7,8 @@
     "build": "tsc",
     "dev": "tsx watch parser.ts",
     "start": "node dist/parser.js",
-    "test": "tsx test-parser.ts"
+    "test": "tsx test-parser.ts",
+    "docs:build": "tsx generate-docs.ts"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",

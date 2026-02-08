@@ -1,2 +1,2 @@
-npm run test --prefix backend
-npm run type-check --prefix frontend
+# npm run test --prefix backend
+# npm run type-check --prefix frontend

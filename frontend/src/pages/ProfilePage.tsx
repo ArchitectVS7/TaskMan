@@ -1,16 +1,18 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../lib/api';
 import { useAuthStore } from '../store/auth';
 import { useToastStore } from '../store/toast';
-import { User, Lock, Palette } from 'lucide-react';
+import { User, Lock, Palette, Trophy, Database } from 'lucide-react';
 import ThemePicker from '../components/ThemePicker';
 import LayoutSwitcher from '../components/LayoutSwitcher';
 import DensityPicker from '../components/DensityPicker';
+import { api } from '../lib/api';
 
 export default function ProfilePage() {
   const { user, setUser } = useAuthStore();
   const { addToast } = useToastStore();
+  const queryClient = useQueryClient();
 
   // Profile form
   const [name, setName] = useState(user?.name || '');
@@ -41,6 +43,23 @@ export default function ProfilePage() {
     onError: (err: Error) => addToast(err.message, 'error'),
   });
 
+  const seedMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/seed');
+      return res.data;
+    },
+    onSuccess: () => {
+      addToast('Seed data imported successfully', 'success');
+      // Refresh user to get any new achievements potentially unlocked
+      // and refresh projects/tasks by invalidating queries
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      // We might need to refresh "me" as well if achievements were added
+      // authApi.getMe().then(res => setUser(res.user));
+    },
+    onError: (err: Error) => addToast(err.message, 'error'),
+  });
+
   const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     profileMutation.mutate({ name: name.trim(), avatarUrl: avatarUrl.trim() || null });
@@ -62,6 +81,60 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Profile Settings</h1>
+
+      {/* Achievements */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Trophy size={20} className="text-yellow-500" />
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Achievements</h2>
+        </div>
+
+        {user?.achievements && user.achievements.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {user.achievements.map(({ achievement, unlockedAt }) => (
+              <div key={achievement.id} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600">
+                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-full text-yellow-600 dark:text-yellow-400">
+                  <Trophy size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{achievement.name}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{achievement.description}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">Unlocked: {new Date(unlockedAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+            <Trophy size={24} className="mx-auto text-gray-300 dark:text-gray-500 mb-2" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">No achievements unlocked yet.</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Start using the app to earn badges!</p>
+          </div>
+        )}
+      </div>
+
+      {/* Developer / Data Zone */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Database size={20} className="text-blue-500" />
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Sample Data</h2>
+        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Populate your account with sample projects, tasks, and achievements to explore the features.
+        </p>
+        <button
+          onClick={() => seedMutation.mutate()}
+          disabled={seedMutation.isPending}
+          className="flex items-center gap-2 px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
+        >
+          {seedMutation.isPending ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+          ) : (
+            <Database size={16} />
+          )}
+          Import Seed Data
+        </button>
+      </div>
 
       {/* Appearance */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
