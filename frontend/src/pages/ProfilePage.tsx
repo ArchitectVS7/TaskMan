@@ -7,7 +7,6 @@ import { User, Lock, Palette, Trophy, Database } from 'lucide-react';
 import ThemePicker from '../components/ThemePicker';
 import LayoutSwitcher from '../components/LayoutSwitcher';
 import DensityPicker from '../components/DensityPicker';
-import { api } from '../lib/api';
 
 export default function ProfilePage() {
   const { user, setUser } = useAuthStore();
@@ -45,8 +44,17 @@ export default function ProfilePage() {
 
   const seedMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.post('/seed');
-      return res.data;
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const res = await fetch(`${API_BASE}/api/seed`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: 'Seed failed' }));
+        throw new Error(body.error || `HTTP ${res.status}`);
+      }
+      return res.json();
     },
     onSuccess: () => {
       addToast('Seed data imported successfully', 'success');
