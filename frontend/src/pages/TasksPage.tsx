@@ -520,7 +520,7 @@ export default function TasksPage() {
 
       // Trigger task completion celebration
       // Find the task name from the current tasks list
-      const task = (tasksData?.pages?.flatMap(p => p.tasks) || []).find(t => t.id === id);
+      const task = tasks.find(t => t.id === id);
       if (task) {
         addCelebration('TASK', { taskName: task.title });
       }
