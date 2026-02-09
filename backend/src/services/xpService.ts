@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma.js';
-import { io } from '../lib/socket.js';
+import { getIO } from '../lib/socket.js';
 import { Priority } from '@prisma/client';
 
 interface XPCalculation {
@@ -161,7 +161,8 @@ export async function awardXP(
   });
 
   // Send real-time update via Socket.io
-  io.to(`user:${userId}`).emit('xpGained', {
+  const socketIO = getIO();
+  socketIO?.to(`user:${userId}`).emit('xpGained', {
     xp,
     newTotal: newXP,
     newLevel,
@@ -172,7 +173,7 @@ export async function awardXP(
   // If leveled up, trigger celebration
   if (leveledUp) {
     const rewards = getLevelRewards(newLevel);
-    io.to(`user:${userId}`).emit('levelUp', {
+    socketIO?.to(`user:${userId}`).emit('levelUp', {
       newLevel,
       rewards,
     });
